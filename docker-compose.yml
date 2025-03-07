@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  go-sdk:
+    container_name: go-sdk
+    image: pingen2/go-sdk
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    stdin_open: true
+    tty: true
