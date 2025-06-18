@@ -50,7 +50,7 @@ func setupUnauthorizedServer() *httptest.Server {
 }
 
 func setupWebhooks(apiBaseURL string) *webhooks.Webhooks {
-    config, _ := pingen2sdk.InitSDK("testSetClientId", "testSetClientSecret", "")
+	config, _ := pingen2sdk.InitSDK("testSetClientId", "testSetClientSecret", "")
 	config.SetAPIBaseURL(apiBaseURL)
 	apiRequestor := api.NewAPIRequestor("dummyToken", config)
 
@@ -170,7 +170,7 @@ func TestGetWebhookCollection_Error(t *testing.T) {
 
 	params := map[string]string{}
 	headers := map[string]string{}
-	resp, err := webhookClient.GetCollection(params, headers)
+	_, err := webhookClient.GetCollection(params, headers)
 
 	assert.NotNil(t, err)
 }

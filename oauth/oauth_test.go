@@ -159,7 +159,9 @@ func TestGetToken_InvalidJson(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`Bad Request`))
+		if _, err := w.Write([]byte(`Bad Request`)); err != nil {
+			t.Errorf("Failed to write response: %v", err)
+		}
 	}))
 	defer server.Close()
 	config.SetAPIBaseURL(server.URL)

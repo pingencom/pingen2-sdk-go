@@ -12,7 +12,7 @@ import (
 )
 
 func setupUsers(apiBaseURL string) *users.Users {
-    config, _ := pingen2sdk.InitSDK("testSetClientId", "testSetClientSecret", "")
+	config, _ := pingen2sdk.InitSDK("testSetClientId", "testSetClientSecret", "")
 	config.SetAPIBaseURL(apiBaseURL)
 	apiRequestor := api.NewAPIRequestor("dummyToken", config)
 

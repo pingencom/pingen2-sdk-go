@@ -14,13 +14,12 @@ import (
 )
 
 func setupFileUpload(apiBaseURL string) *fileupload.FileUpload {
-    config, _ := pingen2sdk.InitSDK("testSetClientId", "testSetClientSecret", "")
+	config, _ := pingen2sdk.InitSDK("testSetClientId", "testSetClientSecret", "")
 	config.SetAPIBaseURL(apiBaseURL)
 	requestor := api.NewAPIRequestor("dummyToken", config)
 
-    return fileupload.NewFileUpload(requestor)
+	return fileupload.NewFileUpload(requestor)
 }
-
 
 func TestRequestFileUpload_Success(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -95,7 +94,7 @@ func TestPutFile_Success(t *testing.T) {
 	}))
 	defer server.Close()
 
-    fileUploader := setupFileUpload(server.URL)
+	fileUploader := setupFileUpload(server.URL)
 
 	tempFile, err := os.CreateTemp("", "testfile*.pdf")
 	if err != nil {
@@ -114,7 +113,7 @@ func TestPutFile_Success(t *testing.T) {
 }
 
 func TestPutFile_FileNotFound(t *testing.T) {
-    fileUploader := setupFileUpload("http://mockserver")
+	fileUploader := setupFileUpload("http://mockserver")
 
 	err := fileUploader.PutFile("/nonexistent/path/to/file.pdf", "https://s3.example/bucket/filename?signer=url")
 	assert.NotNil(t, err)

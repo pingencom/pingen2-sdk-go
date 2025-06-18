@@ -123,7 +123,7 @@ func setupUnauthorizedServer() *httptest.Server {
 }
 
 func setupLetter(apiBaseURL string) *letters.Letters {
-    config, _ := pingen2sdk.InitSDK("testSetClientId", "testSetClientSecret", "")
+	config, _ := pingen2sdk.InitSDK("testSetClientId", "testSetClientSecret", "")
 	config.SetAPIBaseURL(apiBaseURL)
 	apiRequestor := api.NewAPIRequestor("dummyToken", config)
 
@@ -263,7 +263,7 @@ func TestGetCollection(t *testing.T) {
 func TestGetCollection_Error(t *testing.T) {
 	server := setupUnauthorizedServer()
 	defer server.Close()
-    letterClient := setupLetter(server.URL)
+	letterClient := setupLetter(server.URL)
 
 	params := map[string]string{}
 	headers := map[string]string{}

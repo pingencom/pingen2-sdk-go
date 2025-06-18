@@ -134,7 +134,7 @@ func (r *APIRequestor) performHTTPRequest(
 
 	client := &http.Client{Timeout: r.config.GetRequestTimeout()}
 	resp, _ := client.Do(req)
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:govet
 
 	return r.responseHandler.InterpretResponse(resp, target)
 }
