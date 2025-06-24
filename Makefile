@@ -29,11 +29,11 @@ tools:
 # Linting
 lint:
 	@echo "$(BLUE)🔍 Running golangci-lint...$(NC)"
-	GOFLAGS="-buildvcs=false" go run github.com/golangci/golangci-lint/cmd/golangci-lint run
+	GOFLAGS="-buildvcs=false" golangci-lint run
 
 lint-fix:
 	@echo "$(BLUE)🔧 Running golangci-lint with fixes...$(NC)"
-	GOFLAGS="-buildvcs=false" go run github.com/golangci/golangci-lint/cmd/golangci-lint run --fix
+	GOFLAGS="-buildvcs=false" golangci-lint run --fix
 
 # Tests
 test:
