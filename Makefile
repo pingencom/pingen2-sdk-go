@@ -9,6 +9,7 @@ NC=\033[0m
 
 help:
 	@echo "$(BLUE)🚀 Available commands:$(NC)"
+	@echo "  make tools     - Install tools"
 	@echo "  make lint      - Run golangci-lint"
 	@echo "  make lint-fix  - Run golangci-lint with fixes"
 	@echo "  make test      - Run tests"
@@ -20,6 +21,10 @@ help:
 	@echo "  make clean     - Clean temporary files"
 	@echo "  make dev       - Development workflow (fmt + lint-fix + test)"
 	@echo "  make ci        - CI pipeline (deps + fmt + lint + test)"
+
+tools:
+	@echo "$(BLUE)🔧 Installing tools...$(NC)"
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
 # Linting
 lint:
@@ -72,7 +77,7 @@ check: lint test
 	@echo "$(GREEN)✅ All checks passed!$(NC)"
 
 # CI pipeline
-ci: deps fmt lint test
+ci: deps tools fmt lint test
 	@echo "$(GREEN)🚀 CI pipeline completed!$(NC)"
 
 # Development workflow
