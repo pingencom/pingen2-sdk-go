@@ -348,9 +348,6 @@ func TestUploadAndCreateBatch(t *testing.T) {
 
 	batchClient := setupBatch(server.URL)
 
-	splitSize := 10
-	splitPos := batches.SplitPositionFirstPage
-
 	resp, err := batchClient.UploadAndCreateBatch(
 		"test.zip",
 		"Test Upload Batch",
@@ -359,14 +356,68 @@ func TestUploadAndCreateBatch(t *testing.T) {
 		batches.AddressPositionLeft,
 		batches.GroupingTypeZip,
 		batches.SplitTypeFile,
-		&splitSize,
 		nil,
-		&splitPos,
+		nil,
+		nil,
 	)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, resp)
 	assert.Equal(t, "test-batch-id", resp.Data.ID)
+}
+
+func TestUploadAndCreateBatch_PutError(t *testing.T) {
+	var server *httptest.Server
+
+	counter := 0
+	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if counter == 0 {
+			assert.Equal(t, "/file-upload", r.URL.Path)
+			assert.Equal(t, http.MethodGet, r.Method)
+			w.WriteHeader(http.StatusOK)
+			mockUploadResponse := fmt.Sprintf(`{
+                "data": {
+                    "attributes": {
+                        "url": "%s/upload",
+                        "url_signature": "mock-signature"
+                    }
+                }
+            }`, server.URL)
+
+			_, _ = w.Write([]byte(mockUploadResponse))
+		}
+
+		if counter == 1 {
+			w.Header().Set("Content-Type", "application/vnd.api+json")
+			w.Header().Set("X-Request-Id", "requestx-yyyy-yyyy-yyyy-yyyyyyyyyyy2")
+			w.WriteHeader(http.StatusUnauthorized)
+
+			responseJSON := `{"error":"invalid_client","error_description":"Client authentication failed","message":"Client authentication failed"}`
+			_, _ = w.Write([]byte(responseJSON))
+		}
+		counter++
+	}))
+	defer server.Close()
+
+	batchClient := setupBatch(server.URL)
+    separator := "comma"
+
+	_, err := batchClient.UploadAndCreateBatch(
+		"test.zip",
+		"Test Upload Batch",
+		batches.IconRocket,
+		"test.zip",
+		batches.AddressPositionLeft,
+		batches.GroupingTypeZip,
+		batches.SplitTypeFile,
+		nil,
+		&separator,
+		nil,
+	)
+
+	assert.NotNil(t, err)
+	expectedMessage := "PingenError: Api error (Status Code: 401, Request ID: )"
+	assert.Equal(t, expectedMessage, err.Error())
 }
 
 func TestUploadAndCreateBatch_Error(t *testing.T) {
@@ -414,6 +465,7 @@ func TestCreateBatch(t *testing.T) {
 
 	splitSize := 5
 	splitPos := batches.SplitPositionFirstPage
+    separator := "comma"
 
 	resp, err := batchClient.CreateBatch(
 		"https://example.com/file.pdf",
@@ -425,7 +477,7 @@ func TestCreateBatch(t *testing.T) {
 		batches.GroupingTypeZip,
 		batches.SplitTypeFile,
 		&splitSize,
-		nil,
+		&separator,
 		&splitPos,
 	)
 
