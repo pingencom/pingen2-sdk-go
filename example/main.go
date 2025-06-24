@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"time"
 
@@ -85,13 +84,6 @@ func main() {
 	prettyPrint("Letter created:", letterResp.Data)
 
 	letterID := letterResp.Data.ID
-
-	fmt.Println("Get File")
-	data, _ := letterClient.GetFile(letterID)
-	defer data.Close()
-
-	content, _ := io.ReadAll(data)
-	fmt.Printf("File content: %s\n", string(content))
 
 	fmt.Println("LETTER EVENTS")
 	letterEventsClient := letterevents.NewLetterEvents(organisationID, apiRequestor)

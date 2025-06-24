@@ -86,7 +86,7 @@ func TestMissingClientId(t *testing.T) {
 		t.Fatal("expected an error but got none")
 	}
 
-	expectedError := `Missing required credentials (ClientID, ClientSecret)`
+	expectedError := `missing required credentials (ClientID, ClientSecret)`
 	if err.Error() != expectedError {
 		t.Fatalf("expected error: %s, got: %s", expectedError, err.Error())
 	}
@@ -95,7 +95,7 @@ func TestMissingClientId(t *testing.T) {
 func TestMissingClientSecret(t *testing.T) {
 	_, err := pingen2sdk.InitSDK("testSetClientId", "", "")
 
-	expectedError := `Missing required credentials (ClientID, ClientSecret)`
+	expectedError := `missing required credentials (ClientID, ClientSecret)`
 	if err.Error() != expectedError {
 		t.Fatalf("expected error: %s, got: %s", expectedError, err.Error())
 	}
