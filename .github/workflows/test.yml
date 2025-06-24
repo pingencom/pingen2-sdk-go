@@ -16,11 +16,3 @@ jobs:
 
     - name: Run CI pipeline
       run: make ci
-
-    - name: Upload coverage
-      if: success()
-      run: |
-        if [ -f coverage.out ]; then
-          echo "📊 Coverage Report:"
-          go tool cover -func=coverage.out
-        fi
