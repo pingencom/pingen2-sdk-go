@@ -41,11 +41,11 @@ test-verbose:
 	@echo "$(BLUE)🧪 Running tests (verbose)...$(NC)"
 	go test -v ./...
 
-test-coverage:
+test-cov:
 	@echo "$(BLUE)🧪 Running tests with coverage...$(NC)"
 	go test -coverprofile=coverage.out ./...
-	go tool cover -html=coverage.out -o coverage.html
-	@echo "$(GREEN)📊 Coverage saved to coverage.html$(NC)"
+	@echo "$(GREEN)📊 Coverage Report:"
+	go tool cover -func=coverage.out
 
 # Build
 build:
@@ -74,7 +74,7 @@ check: lint test
 	@echo "$(GREEN)✅ All checks passed!$(NC)"
 
 # CI pipeline
-ci: deps lint test
+ci: deps lint test-cov
 	@echo "$(GREEN)🚀 CI pipeline completed!$(NC)"
 
 # Development workflow
