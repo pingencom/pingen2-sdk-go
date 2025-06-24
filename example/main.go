@@ -18,6 +18,7 @@ import (
 	"github.com/pingencom/pingen2-sdk-go/userassociations"
 	"github.com/pingencom/pingen2-sdk-go/users"
 	"github.com/pingencom/pingen2-sdk-go/webhooks"
+	"github.com/pingencom/pingen2-sdk-go/batches"
 )
 
 func prettyPrint(label string, data interface{}) {
@@ -31,8 +32,8 @@ func prettyPrint(label string, data interface{}) {
 
 func main() {
 	config, _ := pingen2sdk.InitSDK(
-		"I5WGC4NAW0MF40S569RP",
-		"7gXoaESAB3/CE9enImXN32DmJ7byEsaswSQaDarFdTQSNrFF1nzb+NDHovqRqU1onPUiFdlyK9mvb0AL",
+		"clientId",
+		"clientSecret",
 		"staging",
 	)
 
@@ -85,6 +86,8 @@ func main() {
 		nil,
 	)
 	prettyPrint("Letter created:", letterResp.Data)
+
+    time.Sleep(2 * time.Second)
 
 	letterID := letterResp.Data.ID
 
