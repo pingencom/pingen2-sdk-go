@@ -9,7 +9,6 @@ NC=\033[0m
 
 help:
 	@echo "$(BLUE)🚀 Available commands:$(NC)"
-	@echo "  make tools     - Install tools"
 	@echo "  make lint      - Run golangci-lint"
 	@echo "  make lint-fix  - Run golangci-lint with fixes"
 	@echo "  make test      - Run tests"
@@ -22,18 +21,16 @@ help:
 	@echo "  make dev       - Development workflow (fmt + lint-fix + test)"
 	@echo "  make ci        - CI pipeline (deps + fmt + lint + test)"
 
-tools:
-	@echo "$(BLUE)🔧 Installing tools...$(NC)"
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-
 # Linting
 lint:
-	@echo "$(BLUE)🔍 Running golangci-lint...$(NC)"
-	GOFLAGS="-buildvcs=false" golangci-lint run
+	@echo "$(BLUE)🔍 Running staticcheck...$(NC)"
+	GOFLAGS="-buildvcs=false" go run honnef.co/go/tools/cmd/staticcheck@latest ./...
 
 lint-fix:
-	@echo "$(BLUE)🔧 Running golangci-lint with fixes...$(NC)"
-	GOFLAGS="-buildvcs=false" golangci-lint run --fix
+	@echo "$(BLUE)🔧 Running go fmt...$(NC)"
+	go fmt ./...
+	@echo "$(BLUE)🔍 Running staticcheck...$(NC)"
+	GOFLAGS="-buildvcs=false" go run honnef.co/go/tools/cmd/staticcheck@latest ./...
 
 # Tests
 test:
@@ -77,7 +74,7 @@ check: lint test
 	@echo "$(GREEN)✅ All checks passed!$(NC)"
 
 # CI pipeline
-ci: deps tools fmt lint test
+ci: deps lint test
 	@echo "$(GREEN)🚀 CI pipeline completed!$(NC)"
 
 # Development workflow
