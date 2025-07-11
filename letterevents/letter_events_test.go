@@ -66,7 +66,7 @@ const mockValidJSONResponse = `{
 }`
 
 func setupLetterEvents(apiBaseURL string) *letterevents.LetterEvents {
-    config, _ := pingen2sdk.InitSDK("testSetClientId", "testSetClientSecret", "")
+	config, _ := pingen2sdk.InitSDK("testSetClientId", "testSetClientSecret", "")
 	config.SetAPIBaseURL(apiBaseURL)
 	apiRequestor := api.NewAPIRequestor("dummyToken", config)
 

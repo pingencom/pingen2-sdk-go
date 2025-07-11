@@ -86,7 +86,7 @@ func TestMissingClientId(t *testing.T) {
 		t.Fatal("expected an error but got none")
 	}
 
-	expectedError := `Missing required credentials (ClientID, ClientSecret)`
+	expectedError := `missing required credentials (ClientID, ClientSecret)`
 	if err.Error() != expectedError {
 		t.Fatalf("expected error: %s, got: %s", expectedError, err.Error())
 	}
@@ -95,7 +95,7 @@ func TestMissingClientId(t *testing.T) {
 func TestMissingClientSecret(t *testing.T) {
 	_, err := pingen2sdk.InitSDK("testSetClientId", "", "")
 
-	expectedError := `Missing required credentials (ClientID, ClientSecret)`
+	expectedError := `missing required credentials (ClientID, ClientSecret)`
 	if err.Error() != expectedError {
 		t.Fatalf("expected error: %s, got: %s", expectedError, err.Error())
 	}
@@ -159,7 +159,9 @@ func TestGetToken_InvalidJson(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`Bad Request`))
+		if _, err := w.Write([]byte(`Bad Request`)); err != nil {
+			t.Errorf("Failed to write response: %v", err)
+		}
 	}))
 	defer server.Close()
 	config.SetAPIBaseURL(server.URL)

@@ -46,10 +46,12 @@ func TestPerformGetRequest_Success(t *testing.T) {
 		assert.Equal(t, "Bearer dummyToken", r.Header.Get("Authorization"))
 		assert.Equal(t, "/api/test", r.URL.Path)
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"result":"success"}`))
+		if _, err := w.Write([]byte(`{"result":"success"}`)); err != nil {
+			t.Errorf("Failed to write response: %v", err)
+		}
 	}))
 	defer server.Close()
-   	config.SetAPIBaseURL(server.URL)
+	config.SetAPIBaseURL(server.URL)
 
 	requestor := NewAPIRequestor("dummyToken", config)
 
@@ -72,10 +74,12 @@ func TestPerformPostRequest_Success(t *testing.T) {
 		body, _ := io.ReadAll(r.Body)
 		assert.JSONEq(t, `{"key":"value"}`, string(body))
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"result":"created"}`))
+		if _, err := w.Write([]byte(`{"result":"created"}`)); err != nil {
+			t.Errorf("Failed to write response: %v", err)
+		}
 	}))
 	defer server.Close()
- 	config.SetAPIBaseURL(server.URL)
+	config.SetAPIBaseURL(server.URL)
 
 	requestor := NewAPIRequestor("dummyToken", config)
 
@@ -99,7 +103,7 @@ func TestPerformPutRequest_Success(t *testing.T) {
 		w.WriteHeader(http.StatusNoContent)
 	}))
 	defer server.Close()
- 	config.SetAPIBaseURL(server.URL)
+	config.SetAPIBaseURL(server.URL)
 
 	requestor := NewAPIRequestor("dummyToken", config)
 
@@ -111,7 +115,7 @@ func TestPerformPutRequest_Success(t *testing.T) {
 
 func TestPerformPutRequest_NetworkError(t *testing.T) {
 	config, _ := pingen2sdk.InitSDK("testSetClientId", "testSetClientSecret", "")
- 	config.SetAPIBaseURL("http://invalid-url")
+	config.SetAPIBaseURL("http://invalid-url")
 	requestor := NewAPIRequestor("dummyToken", config)
 
 	tempFile := strings.NewReader("test content")
@@ -151,7 +155,9 @@ func TestPerformPatchRequest_Success(t *testing.T) {
 		body, _ := io.ReadAll(r.Body)
 		assert.JSONEq(t, `{"key":"value"}`, string(body))
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"result":"updated"}`))
+		if _, err := w.Write([]byte(`{"result":"updated"}`)); err != nil {
+			t.Errorf("Failed to write response: %v", err)
+		}
 	}))
 	defer server.Close()
 	config.SetAPIBaseURL(server.URL)
@@ -208,7 +214,9 @@ func TestPerformGetRequest_Error(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Request-Id", "requestx-xxxx-xxxx-xxxx-xxxxxxxxxxx1")
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error":"internal server error"}`))
+		if _, err := w.Write([]byte(`{"error":"internal server error"}`)); err != nil {
+			t.Errorf("Failed to write response: %v", err)
+		}
 	}))
 	defer server.Close()
 	config.SetAPIBaseURL(server.URL)

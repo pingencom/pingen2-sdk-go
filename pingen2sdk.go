@@ -75,7 +75,7 @@ func (c *Config) GetUserAgent() string {
 
 func (c *Config) validate() error {
 	if c.clientID == "" || c.clientSecret == "" {
-		return fmt.Errorf("Missing required credentials (ClientID, ClientSecret)")
+		return fmt.Errorf("missing required credentials (ClientID, ClientSecret)")
 	}
 	return nil
 }

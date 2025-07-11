@@ -123,7 +123,7 @@ func setupUnauthorizedServer() *httptest.Server {
 }
 
 func setupLetter(apiBaseURL string) *letters.Letters {
-    config, _ := pingen2sdk.InitSDK("testSetClientId", "testSetClientSecret", "")
+	config, _ := pingen2sdk.InitSDK("testSetClientId", "testSetClientSecret", "")
 	config.SetAPIBaseURL(apiBaseURL)
 	apiRequestor := api.NewAPIRequestor("dummyToken", config)
 
@@ -263,7 +263,7 @@ func TestGetCollection(t *testing.T) {
 func TestGetCollection_Error(t *testing.T) {
 	server := setupUnauthorizedServer()
 	defer server.Close()
-    letterClient := setupLetter(server.URL)
+	letterClient := setupLetter(server.URL)
 
 	params := map[string]string{}
 	headers := map[string]string{}
@@ -337,7 +337,7 @@ func TestUploadAndCreate(t *testing.T) {
 
 	letterClient := setupLetter(server.URL)
 
-	filePath := "/app/letters/testFile.pdf"
+	filePath := "testFile.pdf"
 
 	resp, err := letterClient.UploadAndCreate(
 		filePath,
@@ -361,7 +361,7 @@ func TestUploadAndCreate_Error(t *testing.T) {
 	defer server.Close()
 
 	letterClient := setupLetter(server.URL)
-	filePath := "/app/letters/testFile.pdf"
+	filePath := "testFile.pdf"
 
 	_, err := letterClient.UploadAndCreate(
 		filePath,
@@ -414,7 +414,7 @@ func TestUploadAndCreate_ErrorInPut(t *testing.T) {
 	defer server.Close()
 
 	letterClient := setupLetter(server.URL)
-	filePath := "/app/letters/testFile.pdf"
+	filePath := "testFile.pdf"
 
 	_, err := letterClient.UploadAndCreate(
 		filePath,
@@ -448,7 +448,7 @@ func TestCreate(t *testing.T) {
 
 	letterClient := setupLetter(server.URL)
 
-	filePath := "/app/letters/testFile.pdf"
+	filePath := "testFile.pdf"
 
 	resp, err := letterClient.Create(
 		filePath,
