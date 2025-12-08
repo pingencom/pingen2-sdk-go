@@ -1,4 +1,3 @@
-
 package batches_test
 
 import (
@@ -400,7 +399,7 @@ func TestUploadAndCreateBatch_PutError(t *testing.T) {
 	defer server.Close()
 
 	batchClient := setupBatch(server.URL)
-    separator := "comma"
+	separator := "comma"
 
 	_, err := batchClient.UploadAndCreateBatch(
 		"test.zip",
@@ -465,7 +464,7 @@ func TestCreateBatch(t *testing.T) {
 
 	splitSize := 5
 	splitPos := batches.SplitPositionFirstPage
-    separator := "comma"
+	separator := "comma"
 
 	resp, err := batchClient.CreateBatch(
 		"https://example.com/file.pdf",
