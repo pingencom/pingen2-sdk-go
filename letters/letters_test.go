@@ -294,6 +294,15 @@ func TestUploadAndCreate(t *testing.T) {
 		},
 	}
 
+	relationships := map[string]interface{}{
+		"preset": map[string]interface{}{
+			"data": map[string]interface{}{
+				"id":   "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1",
+				"type": "presets",
+			},
+		},
+	}
+
 	var server *httptest.Server
 
 	counter := 0
@@ -349,6 +358,7 @@ func TestUploadAndCreate(t *testing.T) {
 		"color",
 		"Example Sender Address",
 		metaData,
+		relationships,
 	)
 
 	assert.Nil(t, err)
@@ -372,6 +382,7 @@ func TestUploadAndCreate_Error(t *testing.T) {
 		"simplex",
 		"color",
 		"Example Sender Address",
+		nil,
 		nil,
 	)
 
@@ -426,6 +437,7 @@ func TestUploadAndCreate_ErrorInPut(t *testing.T) {
 		"color",
 		"Example Sender Address",
 		nil,
+		nil,
 	)
 
 	assert.NotNil(t, err)
@@ -461,6 +473,7 @@ func TestCreate(t *testing.T) {
 		"",
 		"",
 		nil,
+		nil,
 	)
 
 	assert.Nil(t, err)
@@ -484,6 +497,7 @@ func TestCreate_Error(t *testing.T) {
 		"simplex",
 		"color",
 		"Example Street",
+		nil,
 		nil,
 	)
 
