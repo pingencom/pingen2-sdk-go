@@ -230,7 +230,7 @@ func (l *Letters) UploadAndCreate(
 	pathToFile, fileOriginalName, addressPosition string,
 	autoSend bool,
 	deliveryProduct, printMode, printSpectrum, senderAddress string,
-	metaData map[string]interface{},
+	metaData, relationships map[string]interface{},
 ) (LetterResponse, *errors.PingenError) {
 	fileUpload := fileupload.NewFileUpload(l.apiRequestor)
 
@@ -255,6 +255,7 @@ func (l *Letters) UploadAndCreate(
 		printSpectrum,
 		senderAddress,
 		metaData,
+		relationships,
 	)
 }
 
@@ -262,7 +263,7 @@ func (l *Letters) Create(
 	fileURL, fileSignature, fileOriginalName, addressPosition string,
 	autoSend bool,
 	deliveryProduct, printMode, printSpectrum, senderAddress string,
-	metaData map[string]interface{},
+	metaData, relationships map[string]interface{},
 ) (LetterResponse, *errors.PingenError) {
 	attributes := map[string]interface{}{
 		"file_original_name": fileOriginalName,
@@ -297,6 +298,11 @@ func (l *Letters) Create(
 			"type":       "letters",
 			"attributes": attributes,
 		},
+	}
+
+	if relationships != nil {
+		dataMap := payload["data"].(map[string]interface{})
+		dataMap["relationships"] = relationships
 	}
 
 	data, _ := json.Marshal(payload)

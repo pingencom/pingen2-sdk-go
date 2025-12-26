@@ -19,6 +19,8 @@ import (
 	"github.com/pingencom/pingen2-sdk-go/users"
 	"github.com/pingencom/pingen2-sdk-go/webhooks"
 	"github.com/pingencom/pingen2-sdk-go/batches"
+	"github.com/pingencom/pingen2-sdk-go/ebills"
+	"github.com/pingencom/pingen2-sdk-go/emails"
 )
 
 func prettyPrint(label string, data interface{}) {
@@ -39,7 +41,7 @@ func main() {
 
 	params := map[string]string{
 		"grant_type": "client_credentials",
-		"scope":      "letter batch webhook organisation_read user",
+		"scope":      "letter batch webhook organisation_read user email ebill",
 	}
 
 	tokenResp, err := oauth.GetToken(config, params)
@@ -135,4 +137,57 @@ func main() {
 	fmt.Println("DELETE WEBHOOK")
 	delWebhookResp, _ := webhookClient.Delete(webhookID)
 	prettyPrint("DELETE WEBHOOK RESPONSE:", delWebhookResp)
+
+	emailClient := emails.NewEmails(organisationID, apiRequestor)
+
+	fmt.Println("UPLOAD AND CREATE EMAIL")
+	emailMetaData := map[string]interface{}{
+		"sender_name":    "Test Example",
+        "recipient_email":  "info@test.com",
+		"recipient_name":    "R_Example",
+        "reply_email":  "info_reply@test.com",
+        "reply_name":     "Reply Example",
+        "subject":    "Your new invoice Number xyz",
+        "content": "Dear recipient\\n\\nAttached is your invoice",
+	}
+	emailResp, _ := emailClient.UploadAndCreate(
+		"/app/example/testFile.pdf",
+		"sdk.pdf",
+		false,
+		emailMetaData,
+		nil,
+	)
+	prettyPrint("Email created:", emailResp.Data)
+
+    time.Sleep(2 * time.Second)
+
+    ebillClient := ebills.NewEbills(organisationID, apiRequestor)
+
+	fmt.Println("UPLOAD AND CREATE EMAIL")
+	ebillMetaData := map[string]interface{}{
+		"invoice_number": "Invoice 8051",
+        "invoice_date": "2025-01-01",
+        "invoice_due_date": "2025-01-01",
+        "recipient_identifier": "41010560425610173",
+	}
+
+    relationships := map[string]interface{}{
+        "preset": map[string]interface{}{
+            "data": map[string]interface{}{
+                "id": "7e500ff8-3407-45d1-9d1e-b7de227d1081",
+                "type": "presets",
+            },
+        },
+    }
+
+	ebillResp, _ := ebillClient.UploadAndCreate(
+		"/app/example/testFile.pdf",
+		"sdk.pdf",
+		false,
+		ebillMetaData,
+		relationships,
+	)
+	prettyPrint("Ebill created:", ebillResp.Data)
+
+    time.Sleep(2 * time.Second)
 }
