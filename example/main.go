@@ -19,6 +19,7 @@ import (
 	"github.com/pingencom/pingen2-sdk-go/users"
 	"github.com/pingencom/pingen2-sdk-go/webhooks"
 	"github.com/pingencom/pingen2-sdk-go/batches"
+	"github.com/pingencom/pingen2-sdk-go/batchevents"
 	"github.com/pingencom/pingen2-sdk-go/ebills"
 	"github.com/pingencom/pingen2-sdk-go/emails"
 )
