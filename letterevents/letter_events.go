@@ -88,7 +88,7 @@ func (le *LetterEvents) GetCollection(
 	params map[string]string,
 	headers map[string]string,
 ) (LetterEventsCollectionResponse, *errors.PingenError) {
-	requestURL := fmt.Sprintf("/organisations/%s/letters/%s/events", le.organisationID, letterID)
+	requestURL := fmt.Sprintf("/organisations/%s/deliveries/letters/%s/events", le.organisationID, letterID)
 
 	return le.fetchCollection(requestURL, params, headers)
 }
@@ -97,7 +97,7 @@ func (le *LetterEvents) GetIssueCollection(
 	params map[string]string,
 	headers map[string]string,
 ) (LetterEventsCollectionResponse, *errors.PingenError) {
-	requestURL := fmt.Sprintf("/organisations/%s/letters/events/issues", le.organisationID)
+	requestURL := fmt.Sprintf("/organisations/%s/deliveries/letters/events/issues", le.organisationID)
 
 	return le.fetchCollection(requestURL, params, headers)
 }
@@ -106,7 +106,7 @@ func (le *LetterEvents) GetUndeliverableCollection(
 	params map[string]string,
 	headers map[string]string,
 ) (LetterEventsCollectionResponse, *errors.PingenError) {
-	requestURL := fmt.Sprintf("/organisations/%s/letters/events/undeliverable", le.organisationID)
+	requestURL := fmt.Sprintf("/organisations/%s/deliveries/letters/events/undeliverable", le.organisationID)
 
 	return le.fetchCollection(requestURL, params, headers)
 }
@@ -115,7 +115,7 @@ func (le *LetterEvents) GetSentCollection(
 	params map[string]string,
 	headers map[string]string,
 ) (LetterEventsCollectionResponse, *errors.PingenError) {
-	requestURL := fmt.Sprintf("/organisations/%s/letters/events/sent", le.organisationID)
+	requestURL := fmt.Sprintf("/organisations/%s/deliveries/letters/events/sent", le.organisationID)
 
 	return le.fetchCollection(requestURL, params, headers)
 }

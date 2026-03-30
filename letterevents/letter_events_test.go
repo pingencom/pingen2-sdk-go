@@ -75,7 +75,7 @@ func setupLetterEvents(apiBaseURL string) *letterevents.LetterEvents {
 
 func TestGetCollection(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/letters/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/events", r.URL.Path)
+		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/deliveries/letters/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/events", r.URL.Path)
 		assert.Equal(t, http.MethodGet, r.Method)
 
 		w.Header().Set("Content-Type", "application/vnd.api+json")
@@ -118,7 +118,7 @@ func TestGetCollection_Error(t *testing.T) {
 
 func TestGetIssueCollection(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/letters/events/issues", r.URL.Path)
+		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/deliveries/letters/events/issues", r.URL.Path)
 		assert.Equal(t, http.MethodGet, r.Method)
 
 		w.Header().Set("Content-Type", "application/vnd.api+json")
@@ -140,7 +140,7 @@ func TestGetIssueCollection(t *testing.T) {
 
 func TestGetUndeliverableCollection(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/letters/events/undeliverable", r.URL.Path)
+		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/deliveries/letters/events/undeliverable", r.URL.Path)
 		assert.Equal(t, http.MethodGet, r.Method)
 
 		w.Header().Set("Content-Type", "application/vnd.api+json")
@@ -162,7 +162,7 @@ func TestGetUndeliverableCollection(t *testing.T) {
 
 func TestGetSentCollection(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/letters/events/sent", r.URL.Path)
+		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/deliveries/letters/events/sent", r.URL.Path)
 		assert.Equal(t, http.MethodGet, r.Method)
 
 		w.Header().Set("Content-Type", "application/vnd.api+json")
