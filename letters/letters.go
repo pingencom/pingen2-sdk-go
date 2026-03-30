@@ -205,7 +205,7 @@ func NewLetters(organisationID string, apiRequestor *api.APIRequestor) *Letters 
 
 func (l *Letters) GetDetails(letterID string, params map[string]string, suppliedHeaders map[string]string) (LetterResponse, *errors.PingenError) {
 	var response LetterResponse
-	url := fmt.Sprintf("/organisations/%s/letters/%s", l.organisationID, letterID)
+	url := fmt.Sprintf("/organisations/%s/deliveries/letters/%s", l.organisationID, letterID)
 	_, err := l.apiRequestor.PerformGetRequest(url, &response, params, suppliedHeaders)
 	if err != nil {
 		return LetterResponse{}, err
@@ -216,7 +216,7 @@ func (l *Letters) GetDetails(letterID string, params map[string]string, supplied
 
 func (l *Letters) GetCollection(params map[string]string, suppliedHeaders map[string]string) (LetterCollectionResponse, *errors.PingenError) {
 	var response LetterCollectionResponse
-	url := fmt.Sprintf("/organisations/%s/letters", l.organisationID)
+	url := fmt.Sprintf("/organisations/%s/deliveries/letters", l.organisationID)
 
 	_, err := l.apiRequestor.PerformGetRequest(url, &response, params, suppliedHeaders)
 	if err != nil {
@@ -306,7 +306,7 @@ func (l *Letters) Create(
 	}
 
 	data, _ := json.Marshal(payload)
-	url := fmt.Sprintf("/organisations/%s/letters", l.organisationID)
+	url := fmt.Sprintf("/organisations/%s/deliveries/letters", l.organisationID)
 
 	var response LetterResponse
 
@@ -332,7 +332,7 @@ func (l *Letters) Send(letterID, deliveryProduct, printMode, printSpectrum strin
 	}
 
 	data, _ := json.Marshal(payload)
-	url := fmt.Sprintf("/organisations/%s/letters/%s/send", l.organisationID, letterID)
+	url := fmt.Sprintf("/organisations/%s/deliveries/letters/%s/send", l.organisationID, letterID)
 
 	var response LetterResponse
 
@@ -346,12 +346,12 @@ func (l *Letters) Send(letterID, deliveryProduct, printMode, printSpectrum strin
 }
 
 func (l *Letters) Cancel(letterID string) (interface{}, *errors.PingenError) {
-	url := fmt.Sprintf("/organisations/%s/letters/%s/cancel", l.organisationID, letterID)
+	url := fmt.Sprintf("/organisations/%s/deliveries/letters/%s/cancel", l.organisationID, letterID)
 	return l.apiRequestor.PerformCancelRequest(url)
 }
 
 func (l *Letters) Delete(letterID string) (interface{}, *errors.PingenError) {
-	url := fmt.Sprintf("/organisations/%s/letters/%s", l.organisationID, letterID)
+	url := fmt.Sprintf("/organisations/%s/deliveries/letters/%s", l.organisationID, letterID)
 	return l.apiRequestor.PerformDeleteRequest(url)
 }
 
@@ -367,7 +367,7 @@ func (l *Letters) Edit(letterID string, paperTypes []string) (LetterResponse, *e
 	}
 
 	data, _ := json.Marshal(payload)
-	url := fmt.Sprintf("/organisations/%s/letters/%s", l.organisationID, letterID)
+	url := fmt.Sprintf("/organisations/%s/deliveries/letters/%s", l.organisationID, letterID)
 
 	var response LetterResponse
 
@@ -380,7 +380,7 @@ func (l *Letters) Edit(letterID string, paperTypes []string) (LetterResponse, *e
 }
 
 func (l *Letters) GetFile(letterID string) (io.ReadCloser, *errors.PingenError) {
-	url := fmt.Sprintf("/organisations/%s/letters/%s/file", l.organisationID, letterID)
+	url := fmt.Sprintf("/organisations/%s/deliveries/letters/%s/file", l.organisationID, letterID)
 	return l.apiRequestor.PerformStreamRequest(url)
 }
 
@@ -403,7 +403,7 @@ func (l *Letters) CalculatePrice(
 	}
 
 	data, _ := json.Marshal(payload)
-	url := fmt.Sprintf("/organisations/%s/letters/price-calculator", l.organisationID)
+	url := fmt.Sprintf("/organisations/%s/deliveries/letters/price-calculator", l.organisationID)
 
 	var response PriceCalculationResponse
 

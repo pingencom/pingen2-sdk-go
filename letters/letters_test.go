@@ -132,7 +132,7 @@ func setupLetter(apiBaseURL string) *letters.Letters {
 
 func TestGetDetails(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/letters/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1", r.URL.Path)
+		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/deliveries/letters/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1", r.URL.Path)
 		assert.Equal(t, http.MethodGet, r.Method)
 
 		w.WriteHeader(http.StatusOK)
@@ -236,7 +236,7 @@ func TestGetCollection(t *testing.T) {
 	}`
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/letters", r.URL.Path)
+		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/deliveries/letters", r.URL.Path)
 		assert.Equal(t, http.MethodGet, r.Method)
 
 		w.WriteHeader(http.StatusOK)
@@ -330,7 +330,7 @@ func TestUploadAndCreate(t *testing.T) {
 		}
 
 		if counter == 2 {
-			assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/letters", r.URL.Path)
+			assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/deliveries/letters", r.URL.Path)
 			assert.Equal(t, http.MethodPost, r.Method)
 
 			body, _ := io.ReadAll(r.Body)
@@ -447,7 +447,7 @@ func TestUploadAndCreate_ErrorInPut(t *testing.T) {
 
 func TestCreate(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/letters", r.URL.Path)
+		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/deliveries/letters", r.URL.Path)
 		assert.Equal(t, http.MethodPost, r.Method)
 
 		body, _ := io.ReadAll(r.Body)
@@ -508,7 +508,7 @@ func TestCreate_Error(t *testing.T) {
 
 func TestSendLetter(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/letters/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/send", r.URL.Path)
+		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/deliveries/letters/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/send", r.URL.Path)
 		assert.Equal(t, http.MethodPatch, r.Method)
 
 		body, _ := io.ReadAll(r.Body)
@@ -543,7 +543,7 @@ func TestSendLetter_Error(t *testing.T) {
 
 func TestCancelLetter(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/letters/test-letter-id/cancel", r.URL.Path)
+		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/deliveries/letters/test-letter-id/cancel", r.URL.Path)
 		assert.Equal(t, http.MethodPatch, r.Method)
 
 		w.WriteHeader(http.StatusAccepted)
@@ -560,7 +560,7 @@ func TestCancelLetter(t *testing.T) {
 
 func TestDeleteLetter(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/letters/test-letter-id", r.URL.Path)
+		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/deliveries/letters/test-letter-id", r.URL.Path)
 		assert.Equal(t, http.MethodDelete, r.Method)
 
 		w.WriteHeader(http.StatusNoContent)
@@ -577,7 +577,7 @@ func TestDeleteLetter(t *testing.T) {
 
 func TestEdit(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/letters/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1", r.URL.Path)
+		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/deliveries/letters/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1", r.URL.Path)
 		assert.Equal(t, http.MethodPatch, r.Method)
 
 		body, err := io.ReadAll(r.Body)
@@ -624,7 +624,7 @@ func TestEdit_Error(t *testing.T) {
 
 func TestGetFile(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/letters/letterxx-xxxx-xxxx-xxxx-xxxxxxxxxx21/file", r.URL.Path)
+		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/deliveries/letters/letterxx-xxxx-xxxx-xxxx-xxxxxxxxxx21/file", r.URL.Path)
 		assert.Equal(t, http.MethodGet, r.Method)
 
 		w.WriteHeader(http.StatusOK)
@@ -658,7 +658,7 @@ func TestCalculatePrice(t *testing.T) {
 	}`
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/letters/price-calculator", r.URL.Path)
+		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/deliveries/letters/price-calculator", r.URL.Path)
 		assert.Equal(t, http.MethodPost, r.Method)
 
 		body, _ := io.ReadAll(r.Body)
