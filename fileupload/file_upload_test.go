@@ -7,14 +7,14 @@ import (
 	"os"
 	"testing"
 
-	"github.com/pingencom/pingen2-sdk-go"
 	"github.com/pingencom/pingen2-sdk-go/api"
+	"github.com/pingencom/pingen2-sdk-go/config"
 	"github.com/pingencom/pingen2-sdk-go/fileupload"
 	"github.com/stretchr/testify/assert"
 )
 
 func setupFileUpload(apiBaseURL string) *fileupload.FileUpload {
-	config, _ := pingen2sdk.InitSDK("testSetClientId", "testSetClientSecret", "")
+	config, _ := config.InitSDK("testSetClientId", "testSetClientSecret", "")
 	config.SetAPIBaseURL(apiBaseURL)
 	requestor := api.NewAPIRequestor("dummyToken", config)
 

@@ -119,3 +119,12 @@ func (le *LetterEvents) GetSentCollection(
 
 	return le.fetchCollection(requestURL, params, headers)
 }
+
+func (le *LetterEvents) GetDeliveredCollection(
+	params map[string]string,
+	headers map[string]string,
+) (LetterEventsCollectionResponse, *errors.PingenError) {
+	requestURL := fmt.Sprintf("/organisations/%s/deliveries/letters/events/delivered", le.organisationID)
+
+	return le.fetchCollection(requestURL, params, headers)
+}

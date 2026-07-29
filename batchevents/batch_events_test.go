@@ -5,9 +5,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/pingencom/pingen2-sdk-go"
 	"github.com/pingencom/pingen2-sdk-go/api"
 	"github.com/pingencom/pingen2-sdk-go/batchevents"
+	"github.com/pingencom/pingen2-sdk-go/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -65,7 +65,7 @@ const mockValidJSONResponse = `{
 }`
 
 func setupBatchEvents(apiBaseURL string) *batchevents.BatchEvents {
-	config, _ := pingen2sdk.InitSDK("testSetClientId", "testSetClientSecret", "")
+	config, _ := config.InitSDK("testSetClientId", "testSetClientSecret", "")
 	config.SetAPIBaseURL(apiBaseURL)
 	apiRequestor := api.NewAPIRequestor("dummyToken", config)
 
@@ -93,4 +93,24 @@ func TestGetCollection(t *testing.T) {
 	assert.Len(t, response.Data, 1)
 	assert.Equal(t, 1, response.Meta.CurrentPage)
 	assert.Equal(t, 200, http.StatusOK)
+}
+
+func TestGetCollection_Error(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(`{"errors":[{"code":"500","title":"Server error"}]}`))
+	}))
+	defer server.Close()
+
+	config, _ := config.InitSDK("testClientId", "testClientSecret", "")
+	config.SetAPIBaseURL(server.URL)
+	requestor := api.NewAPIRequestor("dummyToken", config)
+
+	batchEvents := batchevents.NewBatchEvents("testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1", requestor)
+
+	resp, err := batchEvents.GetCollection("test-batch-id", nil, nil)
+
+	assert.NotNil(t, err)
+	assert.Equal(t, http.StatusInternalServerError, err.StatusCode)
+	assert.Empty(t, resp.Data)
 }

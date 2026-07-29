@@ -1,322 +1,235 @@
-package pingen2sdk
+package pingen2sdk_test
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
-	"time"
+
+	"github.com/pingencom/pingen2-sdk-go"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestInitSDK(t *testing.T) {
-	t.Run("successful initialization with production environment", func(t *testing.T) {
-		clientID := "test-client-id"
-		clientSecret := "test-client-secret"
-		environment := "production"
+const mockTokenResponse = `{
+	"access_token": "mockAccessToken",
+	"token_type": "Bearer",
+	"expires_in": 3600
+}`
 
-		config, err := InitSDK(clientID, clientSecret, environment)
+const mockLetterResponse = `{
+	"data": {
+		"id": "test-letter-id",
+		"type": "letters",
+		"attributes": {
+			"status": "sent",
+			"file_original_name": "test.pdf",
+			"file_pages": 2,
+			"address": "Test Address",
+			"address_position": "left",
+			"country": "CH",
+			"delivery_product": "fast",
+			"print_mode": "simplex",
+			"print_spectrum": "color",
+			"price_currency": "CHF",
+			"price_value": 1.5,
+			"paper_types": ["normal"],
+			"source": "api",
+			"tracking_number": "tracking-number",
+			"submitted_at": "2021-11-19T09:42:48+0100",
+			"created_at": "2020-11-19T09:42:48+0100",
+			"updated_at": "2020-11-19T09:42:48+0100"
+		}
+	}
+}`
 
-		if err != nil {
-			t.Fatalf("Expected no error, got %v", err)
-		}
-		if config == nil {
-			t.Fatal("Expected config to be non-nil")
-		}
-		if config.clientID != clientID {
-			t.Errorf("Expected clientID %s, got %s", clientID, config.clientID)
-		}
-		if config.clientSecret != clientSecret {
-			t.Errorf("Expected clientSecret %s, got %s", clientSecret, config.clientSecret)
-		}
-		if config.environment != environment {
-			t.Errorf("Expected environment %s, got %s", environment, config.environment)
-		}
-		if config.requestTimeout != 20*time.Second {
-			t.Errorf("Expected timeout 20s, got %v", config.requestTimeout)
-		}
+func TestNewWithClientCredentials(t *testing.T) {
+	c, err := pingen2sdk.New(pingen2sdk.Options{
+		ClientID:       "testClientId",
+		ClientSecret:   "testClientSecret",
+		Scope:          "letter batch",
+		OrganisationID: "test-organisation-id",
 	})
 
-	t.Run("successful initialization with staging environment", func(t *testing.T) {
-		config, err := InitSDK("client", "secret", "staging")
+	assert.NoError(t, err)
+	assert.NotNil(t, c.Config)
+	assert.NotNil(t, c.OAuth)
+	assert.NotNil(t, c.Requestor)
+	assert.Equal(t, "test-organisation-id", c.OrganisationID())
 
-		if err != nil {
-			t.Fatalf("Expected no error, got %v", err)
-		}
-		if config.environment != "staging" {
-			t.Errorf("Expected environment staging, got %s", config.environment)
-		}
-	})
+	assert.NotNil(t, c.Organisations)
+	assert.NotNil(t, c.Users)
+	assert.NotNil(t, c.UserAssociations)
+	assert.NotNil(t, c.Letters)
+	assert.NotNil(t, c.LetterEvents)
+	assert.NotNil(t, c.Batches)
+	assert.NotNil(t, c.BatchEvents)
+	assert.NotNil(t, c.Webhooks)
+	assert.NotNil(t, c.Emails)
+	assert.NotNil(t, c.EmailEvents)
+	assert.NotNil(t, c.Ebills)
+	assert.NotNil(t, c.EbillEvents)
 
-	t.Run("default environment when empty", func(t *testing.T) {
-		config, err := InitSDK("client", "secret", "")
-
-		if err != nil {
-			t.Fatalf("Expected no error, got %v", err)
-		}
-		if config.environment != "production" {
-			t.Errorf("Expected default environment production, got %s", config.environment)
-		}
-	})
-
-	t.Run("error with empty clientID", func(t *testing.T) {
-		config, err := InitSDK("", "secret", "production")
-
-		if err == nil {
-			t.Error("Expected error for empty clientID")
-		}
-		if config != nil {
-			t.Error("Expected config to be nil on error")
-		}
-		expectedError := "missing required credentials (ClientID, ClientSecret)"
-		if err.Error() != expectedError {
-			t.Errorf("Expected error '%s', got '%s'", expectedError, err.Error())
-		}
-	})
-
-	t.Run("error with empty clientSecret", func(t *testing.T) {
-		config, err := InitSDK("client", "", "production")
-
-		if err == nil {
-			t.Error("Expected error for empty clientSecret")
-		}
-		if config != nil {
-			t.Error("Expected config to be nil on error")
-		}
-	})
-
-	t.Run("error with both credentials empty", func(t *testing.T) {
-		config, err := InitSDK("", "", "production")
-
-		if err == nil {
-			t.Error("Expected error for empty credentials")
-		}
-		if config != nil {
-			t.Error("Expected config to be nil on error")
-		}
-	})
-
-	t.Run("default URLs are set correctly", func(t *testing.T) {
-		config, err := InitSDK("client", "secret", "production")
-
-		if err != nil {
-			t.Fatalf("Expected no error, got %v", err)
-		}
-
-		expectedAPIUrl := "https://api.pingen.com"
-		expectedAuthUrl := "https://identity.pingen.com"
-		expectedAPIStagingUrl := "https://api-staging.pingen.com"
-		expectedAuthStagingUrl := "https://identity-staging.pingen.com"
-
-		if config.apiProductionUrl != expectedAPIUrl {
-			t.Errorf("Expected API production URL %s, got %s", expectedAPIUrl, config.apiProductionUrl)
-		}
-		if config.authProductionUrl != expectedAuthUrl {
-			t.Errorf("Expected Auth production URL %s, got %s", expectedAuthUrl, config.authProductionUrl)
-		}
-		if config.apiStagingUrl != expectedAPIStagingUrl {
-			t.Errorf("Expected API staging URL %s, got %s", expectedAPIStagingUrl, config.apiStagingUrl)
-		}
-		if config.authStagingUrl != expectedAuthStagingUrl {
-			t.Errorf("Expected Auth staging URL %s, got %s", expectedAuthStagingUrl, config.authStagingUrl)
-		}
-	})
+	assert.Equal(t, "https://api.pingen.com", c.Config.GetAPIBaseURL())
+	assert.Equal(t, "https://identity.pingen.com", c.Config.GetAuthBaseURL())
 }
 
-func TestConfig_SetAPIBaseURL(t *testing.T) {
-	t.Run("set custom API base URL", func(t *testing.T) {
-		config, _ := InitSDK("client", "secret", "production")
-		customURL := "https://custom-api.example.com"
-
-		config.SetAPIBaseURL(customURL)
-
-		if config.apiProductionUrl != customURL {
-			t.Errorf("Expected API URL %s, got %s", customURL, config.apiProductionUrl)
-		}
+func TestNewStagingEnvironment(t *testing.T) {
+	c, err := pingen2sdk.New(pingen2sdk.Options{
+		ClientID:       "testClientId",
+		ClientSecret:   "testClientSecret",
+		Environment:    "staging",
+		OrganisationID: "test-organisation-id",
 	})
+
+	assert.NoError(t, err)
+	assert.Equal(t, "https://api-staging.pingen.com", c.Config.GetAPIBaseURL())
+	assert.Equal(t, "https://identity-staging.pingen.com", c.Config.GetAuthBaseURL())
 }
 
-func TestConfig_GetAPIBaseURL(t *testing.T) {
-	t.Run("production environment returns production URL", func(t *testing.T) {
-		config, _ := InitSDK("client", "secret", "production")
-
-		url := config.GetAPIBaseURL()
-		expected := "https://api.pingen.com"
-
-		if url != expected {
-			t.Errorf("Expected URL %s, got %s", expected, url)
-		}
+func TestNewWithStaticAccessToken(t *testing.T) {
+	c, err := pingen2sdk.New(pingen2sdk.Options{
+		AccessToken:    "staticAccessToken",
+		Environment:    "staging",
+		OrganisationID: "test-organisation-id",
 	})
 
-	t.Run("staging environment returns staging URL", func(t *testing.T) {
-		config, _ := InitSDK("client", "secret", "staging")
-
-		url := config.GetAPIBaseURL()
-		expected := "https://api-staging.pingen.com"
-
-		if url != expected {
-			t.Errorf("Expected URL %s, got %s", expected, url)
-		}
-	})
-
-	t.Run("custom environment returns staging URL", func(t *testing.T) {
-		config, _ := InitSDK("client", "secret", "development")
-
-		url := config.GetAPIBaseURL()
-		expected := "https://api-staging.pingen.com"
-
-		if url != expected {
-			t.Errorf("Expected URL %s, got %s", expected, url)
-		}
-	})
-
-	t.Run("custom API URL in production", func(t *testing.T) {
-		config, _ := InitSDK("client", "secret", "production")
-		customURL := "https://custom-api.example.com"
-		config.SetAPIBaseURL(customURL)
-
-		url := config.GetAPIBaseURL()
-
-		if url != customURL {
-			t.Errorf("Expected custom URL %s, got %s", customURL, url)
-		}
-	})
+	assert.NoError(t, err)
+	assert.Nil(t, c.OAuth)
+	assert.NotNil(t, c.Requestor)
+	assert.NotNil(t, c.Letters)
+	assert.NotNil(t, c.EbillEvents)
+	assert.Equal(t, "https://api-staging.pingen.com", c.Config.GetAPIBaseURL())
 }
 
-func TestConfig_GetAuthBaseURL(t *testing.T) {
-	t.Run("production environment returns production auth URL", func(t *testing.T) {
-		config, _ := InitSDK("client", "secret", "production")
-
-		url := config.GetAuthBaseURL()
-		expected := "https://identity.pingen.com"
-
-		if url != expected {
-			t.Errorf("Expected auth URL %s, got %s", expected, url)
-		}
+func TestNewWithoutCredentialsOrToken(t *testing.T) {
+	c, err := pingen2sdk.New(pingen2sdk.Options{
+		OrganisationID: "test-organisation-id",
 	})
 
-	t.Run("staging environment returns staging auth URL", func(t *testing.T) {
-		config, _ := InitSDK("client", "secret", "staging")
-
-		url := config.GetAuthBaseURL()
-		expected := "https://identity-staging.pingen.com"
-
-		if url != expected {
-			t.Errorf("Expected auth URL %s, got %s", expected, url)
-		}
-	})
-
-	t.Run("custom environment returns staging auth URL", func(t *testing.T) {
-		config, _ := InitSDK("client", "secret", "test")
-
-		url := config.GetAuthBaseURL()
-		expected := "https://identity-staging.pingen.com"
-
-		if url != expected {
-			t.Errorf("Expected auth URL %s, got %s", expected, url)
-		}
-	})
+	assert.Error(t, err)
+	assert.Nil(t, c)
+	assert.Contains(t, err.Error(), "missing required credentials")
 }
 
-func TestConfig_GetClientID(t *testing.T) {
-	t.Run("returns correct client ID", func(t *testing.T) {
-		clientID := "test-client-12345"
-		config, _ := InitSDK(clientID, "secret", "production")
-
-		result := config.GetClientID()
-
-		if result != clientID {
-			t.Errorf("Expected client ID %s, got %s", clientID, result)
-		}
+func TestNewWithoutOrganisationID(t *testing.T) {
+	c, err := pingen2sdk.New(pingen2sdk.Options{
+		AccessToken: "staticAccessToken",
 	})
+
+	assert.NoError(t, err)
+	assert.Equal(t, "", c.OrganisationID())
+	assert.NotNil(t, c.Letters)
+	assert.NotNil(t, c.Batches)
+	assert.NotNil(t, c.Emails)
 }
 
-func TestConfig_GetClientSecret(t *testing.T) {
-	t.Run("returns correct client secret", func(t *testing.T) {
-		clientSecret := "super-secret-key-67890"
-		config, _ := InitSDK("client", clientSecret, "production")
-
-		result := config.GetClientSecret()
-
-		if result != clientSecret {
-			t.Errorf("Expected client secret %s, got %s", clientSecret, result)
-		}
+func TestForOrganisation(t *testing.T) {
+	c, err := pingen2sdk.New(pingen2sdk.Options{
+		AccessToken:    "staticAccessToken",
+		OrganisationID: "first-organisation-id",
 	})
+	assert.NoError(t, err)
+
+	scoped := c.ForOrganisation("second-organisation-id")
+
+	assert.Equal(t, "second-organisation-id", scoped.OrganisationID())
+	assert.Equal(t, "first-organisation-id", c.OrganisationID())
+
+	assert.NotSame(t, c, scoped)
+	assert.NotSame(t, c.Letters, scoped.Letters)
+	assert.NotSame(t, c.Batches, scoped.Batches)
+	assert.NotSame(t, c.EmailEvents, scoped.EmailEvents)
+
+	assert.Same(t, c.Requestor, scoped.Requestor)
+	assert.Same(t, c.Config, scoped.Config)
 }
 
-func TestConfig_GetRequestTimeout(t *testing.T) {
-	t.Run("returns default timeout", func(t *testing.T) {
-		config, _ := InitSDK("client", "secret", "production")
+func TestForOrganisationRoutesRequests(t *testing.T) {
+	var requestedPath, authorizationHeader string
 
-		timeout := config.GetRequestTimeout()
-		expected := 20 * time.Second
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestedPath = r.URL.Path
+		authorizationHeader = r.Header.Get("Authorization")
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		w.Header().Set("X-Request-Id", "requestx-yyyy-yyyy-yyyy-yyyyyyyyyyy1")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(mockLetterResponse))
+	}))
+	defer server.Close()
 
-		if timeout != expected {
-			t.Errorf("Expected timeout %v, got %v", expected, timeout)
-		}
+	c, err := pingen2sdk.New(pingen2sdk.Options{
+		AccessToken:    "staticAccessToken",
+		OrganisationID: "first-organisation-id",
 	})
+	assert.NoError(t, err)
+	c.Config.SetAPIBaseURL(server.URL)
+
+	scoped := c.ForOrganisation("second-organisation-id")
+
+	_, pingenErr := scoped.Letters.GetDetails("test-letter-id", nil, nil)
+
+	assert.Nil(t, pingenErr)
+	assert.Equal(t, "/organisations/second-organisation-id/deliveries/letters/test-letter-id", requestedPath)
+	assert.Equal(t, "Bearer staticAccessToken", authorizationHeader)
 }
 
-func TestConfig_GetUserAgent(t *testing.T) {
-	t.Run("returns correct user agent", func(t *testing.T) {
-		config, _ := InitSDK("client", "secret", "production")
+func TestClientSmokeThroughOAuth(t *testing.T) {
+	var authorizationHeader, requestedScope string
 
-		userAgent := config.GetUserAgent()
-		expected := "PINGEN.SDK.GO"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/auth/access-tokens" {
+			_ = r.ParseForm()
+			requestedScope = r.Form.Get("scope")
 
-		if userAgent != expected {
-			t.Errorf("Expected user agent %s, got %s", expected, userAgent)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(mockTokenResponse))
+			return
 		}
+
+		authorizationHeader = r.Header.Get("Authorization")
+
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		w.Header().Set("X-Request-Id", "requestx-yyyy-yyyy-yyyy-yyyyyyyyyyy1")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(mockLetterResponse))
+	}))
+	defer server.Close()
+
+	c, err := pingen2sdk.New(pingen2sdk.Options{
+		ClientID:       "testClientId",
+		ClientSecret:   "testClientSecret",
+		Scope:          "letter batch",
+		OrganisationID: "test-organisation-id",
 	})
+	assert.NoError(t, err)
+	c.Config.SetAPIBaseURL(server.URL)
+
+	response, pingenErr := c.Letters.GetDetails("test-letter-id", nil, nil)
+
+	assert.Nil(t, pingenErr)
+	assert.Equal(t, "test-letter-id", response.Data.ID)
+	assert.Equal(t, "letters", response.Data.Type)
+	assert.Equal(t, "sent", response.Data.Attributes.Status)
+	assert.Equal(t, "Bearer mockAccessToken", authorizationHeader)
+	assert.NotNil(t, c.OAuth.GetCurrentToken())
+	assert.Equal(t, "mockAccessToken", c.OAuth.GetCurrentToken().AccessToken)
+	assert.Equal(t, "letter batch", requestedScope)
 }
 
-func TestConfig_validate(t *testing.T) {
-	t.Run("valid config passes validation", func(t *testing.T) {
-		config := &Config{
-			clientID:     "valid-client",
-			clientSecret: "valid-secret",
-		}
+func TestInitSDKDelegatesToConfig(t *testing.T) {
+	cfg, err := pingen2sdk.InitSDK("testClientId", "testClientSecret", "staging")
 
-		err := config.validate()
+	assert.NoError(t, err)
+	assert.Equal(t, "https://api-staging.pingen.com", cfg.GetAPIBaseURL())
+	assert.Equal(t, "testClientId", cfg.GetClientID())
 
-		if err != nil {
-			t.Errorf("Expected no error for valid config, got %v", err)
-		}
-	})
+	_, err = pingen2sdk.InitSDK("", "", "")
+	assert.Error(t, err)
+}
 
-	t.Run("empty clientID fails validation", func(t *testing.T) {
-		config := &Config{
-			clientID:     "",
-			clientSecret: "valid-secret",
-		}
+func TestInitSDKWithoutCredentialsDelegatesToConfig(t *testing.T) {
+	cfg := pingen2sdk.InitSDKWithoutCredentials("staging")
 
-		err := config.validate()
-
-		if err == nil {
-			t.Error("Expected error for empty clientID")
-		}
-	})
-
-	t.Run("empty clientSecret fails validation", func(t *testing.T) {
-		config := &Config{
-			clientID:     "valid-client",
-			clientSecret: "",
-		}
-
-		err := config.validate()
-
-		if err == nil {
-			t.Error("Expected error for empty clientSecret")
-		}
-	})
-
-	t.Run("validation error message", func(t *testing.T) {
-		config := &Config{
-			clientID:     "",
-			clientSecret: "",
-		}
-
-		err := config.validate()
-		expected := "missing required credentials (ClientID, ClientSecret)"
-
-		if err.Error() != expected {
-			t.Errorf("Expected error message '%s', got '%s'", expected, err.Error())
-		}
-	})
+	assert.Equal(t, "https://api-staging.pingen.com", cfg.GetAPIBaseURL())
+	assert.Empty(t, cfg.GetClientID())
 }

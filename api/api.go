@@ -7,21 +7,34 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/pingencom/pingen2-sdk-go"
+	"github.com/pingencom/pingen2-sdk-go/config"
 	"github.com/pingencom/pingen2-sdk-go/errors"
 	"github.com/pingencom/pingen2-sdk-go/response"
 )
 
+type TokenSource interface {
+	GetAccessToken() (string, error)
+}
+
 type APIRequestor struct {
 	accessToken     string
-	config          *pingen2sdk.Config
+	tokenSource     TokenSource
+	config          *config.Config
 	responseHandler *response.JSONResponseHandler
 }
 
-func NewAPIRequestor(accessToken string, config *pingen2sdk.Config) *APIRequestor {
+func NewAPIRequestor(accessToken string, cfg *config.Config) *APIRequestor {
 	return &APIRequestor{
 		accessToken:     accessToken,
-		config:          config,
+		config:          cfg,
+		responseHandler: &response.JSONResponseHandler{},
+	}
+}
+
+func NewAPIRequestorWithTokenSource(tokenSource TokenSource, cfg *config.Config) *APIRequestor {
+	return &APIRequestor{
+		tokenSource:     tokenSource,
+		config:          cfg,
 		responseHandler: &response.JSONResponseHandler{},
 	}
 }
@@ -98,13 +111,34 @@ func (r *APIRequestor) PerformDeleteRequest(
 	return r.performHTTPRequest(http.MethodDelete, urlPath, nil, nil, nil, nil)
 }
 
+func (r *APIRequestor) PerformDeleteRequestWithPayload(
+	urlPath string,
+	payload []byte,
+) (interface{}, *errors.PingenError) {
+	body := bytes.NewBuffer(payload)
+	return r.performHTTPRequest(http.MethodDelete, urlPath, body, nil, nil, nil)
+}
+
 func (r *APIRequestor) PerformStreamRequest(url string) (io.ReadCloser, *errors.PingenError) {
+	accessToken, tokenErr := r.resolveAccessToken()
+	if tokenErr != nil {
+		return nil, tokenErr
+	}
+
 	reqURL := r.preparePath(url, nil)
 	req, _ := http.NewRequest(http.MethodGet, reqURL, nil)
-	req.Header = r.requestHeaders(nil)
+	req.Header = r.requestHeaders(accessToken, nil)
 
 	client := &http.Client{Timeout: r.config.GetRequestTimeout()}
-	resp, _ := client.Do(req)
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, errors.NewPingenError(
+			"Internal error",
+			fmt.Sprintf("Failed to send stream request: %v", err.Error()),
+			http.StatusInternalServerError,
+			nil,
+		)
+	}
 
 	if resp.StatusCode != http.StatusOK {
 		defer resp.Body.Close()
@@ -127,16 +161,47 @@ func (r *APIRequestor) performHTTPRequest(
 	params map[string]string,
 	target interface{},
 ) (interface{}, *errors.PingenError) {
+	accessToken, tokenErr := r.resolveAccessToken()
+	if tokenErr != nil {
+		return nil, tokenErr
+	}
+
 	reqURL := r.preparePath(urlPath, params)
 
 	req, _ := http.NewRequest(method, reqURL, body)
-	req.Header = r.requestHeaders(headers)
+	req.Header = r.requestHeaders(accessToken, headers)
 
 	client := &http.Client{Timeout: r.config.GetRequestTimeout()}
-	resp, _ := client.Do(req)
-	defer resp.Body.Close() //nolint:govet
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, errors.NewPingenError(
+			"Internal error",
+			fmt.Sprintf("Failed to send %s request: %v", method, err.Error()),
+			http.StatusInternalServerError,
+			nil,
+		)
+	}
+	defer resp.Body.Close()
 
 	return r.responseHandler.InterpretResponse(resp, target)
+}
+
+func (r *APIRequestor) resolveAccessToken() (string, *errors.PingenError) {
+	if r.tokenSource == nil {
+		return r.accessToken, nil
+	}
+
+	token, err := r.tokenSource.GetAccessToken()
+	if err != nil {
+		return "", errors.NewPingenError(
+			"Authentication error",
+			"",
+			http.StatusUnauthorized,
+			nil,
+		)
+	}
+
+	return token, nil
 }
 
 func (r *APIRequestor) preparePath(
@@ -154,11 +219,11 @@ func (r *APIRequestor) preparePath(
 	return reqURL.String()
 }
 
-func (r *APIRequestor) requestHeaders(extraHeaders map[string]string) http.Header {
+func (r *APIRequestor) requestHeaders(accessToken string, extraHeaders map[string]string) http.Header {
 	headers := http.Header{}
 
 	headers.Add("User-Agent", r.config.GetUserAgent())
-	headers.Add("Authorization", fmt.Sprintf("Bearer %s", r.accessToken))
+	headers.Add("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 	headers.Add("Content-Type", "application/vnd.api+json")
 	headers.Add("Accept", "application/vnd.api+json")
 

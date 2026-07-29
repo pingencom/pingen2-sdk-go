@@ -3,6 +3,7 @@ package emails
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 
 	"github.com/pingencom/pingen2-sdk-go/api"
 	"github.com/pingencom/pingen2-sdk-go/errors"
@@ -57,7 +58,15 @@ type EmailResponse struct {
 		Meta struct {
 			Abilities struct {
 				Self struct {
-					Delete string `json:"delete"`
+					GetPdfRaw        string `json:"get-pdf-raw"`
+					GetPdfValidation string `json:"get-pdf-validation"`
+					RestoreOriginal  string `json:"restore-original"`
+					Delete           string `json:"delete"`
+					Cancel           string `json:"cancel"`
+					ApplyPreset      string `json:"apply-preset"`
+					CreatePreset     string `json:"create-preset"`
+					Revalidate       string `json:"revalidate"`
+					AddAttachment    string `json:"add-attachment"`
 				} `json:"self"`
 			} `json:"abilities"`
 		} `json:"meta"`
@@ -217,4 +226,19 @@ func (e *Emails) Create(
 	}
 
 	return response, nil
+}
+
+func (e *Emails) Cancel(emailID string) (interface{}, *errors.PingenError) {
+	url := fmt.Sprintf("/organisations/%s/deliveries/emails/%s/cancel", e.organisationID, emailID)
+	return e.apiRequestor.PerformCancelRequest(url)
+}
+
+func (e *Emails) Delete(emailID string) (interface{}, *errors.PingenError) {
+	url := fmt.Sprintf("/organisations/%s/deliveries/emails/%s", e.organisationID, emailID)
+	return e.apiRequestor.PerformDeleteRequest(url)
+}
+
+func (e *Emails) GetFile(emailID string) (io.ReadCloser, *errors.PingenError) {
+	url := fmt.Sprintf("/organisations/%s/deliveries/emails/%s/file", e.organisationID, emailID)
+	return e.apiRequestor.PerformStreamRequest(url)
 }

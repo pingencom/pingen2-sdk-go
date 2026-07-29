@@ -30,6 +30,41 @@ const (
 	IconVirus        Icon = "virus"
 )
 
+type ChannelType string
+
+const (
+	ChannelTypePost  ChannelType = "post"
+	ChannelTypeEbill ChannelType = "ebill"
+	ChannelTypeEmail ChannelType = "email"
+)
+
+type DeliveryProduct string
+
+const (
+	DeliveryProductFast       DeliveryProduct = "fast"
+	DeliveryProductCheap      DeliveryProduct = "cheap"
+	DeliveryProductBulk       DeliveryProduct = "bulk"
+	DeliveryProductPremium    DeliveryProduct = "premium"
+	DeliveryProductRegistered DeliveryProduct = "registered"
+
+	DeliveryProductElectronicEmail DeliveryProduct = "electronic_email"
+	DeliveryProductElectronicEbill DeliveryProduct = "electronic_ebill"
+)
+
+type PrintMode string
+
+const (
+	PrintModeSimplex PrintMode = "simplex"
+	PrintModeDuplex  PrintMode = "duplex"
+)
+
+type PrintSpectrum string
+
+const (
+	PrintSpectrumColor     PrintSpectrum = "color"
+	PrintSpectrumGrayscale PrintSpectrum = "grayscale"
+)
+
 type AddressPosition string
 
 const (
@@ -70,11 +105,15 @@ type BatchResponse struct {
 		ID         string `json:"id"`
 		Type       string `json:"type"`
 		Attributes struct {
-			Name             string  `json:"name"`
-			Icon             string  `json:"icon"`
-			Status           string  `json:"status"`
-			FileOriginalName string  `json:"file_original_name"`
+			Name        string `json:"name"`
+			ChannelType string `json:"channel_type"`
+			Icon        string `json:"icon"`
+			Status      string `json:"status"`
+
+			FileOriginalName string `json:"file_original_name"`
+			// LetterCount is deprecated, use DeliverableCount instead.
 			LetterCount      int     `json:"letter_count"`
+			DeliverableCount int     `json:"deliverable_count"`
 			AddressPosition  string  `json:"address_position"`
 			PrintMode        string  `json:"print_mode"`
 			PrintSpectrum    string  `json:"print_spectrum"`
@@ -130,11 +169,15 @@ type BatchCollectionResponse struct {
 		ID         string `json:"id"`
 		Type       string `json:"type"`
 		Attributes struct {
-			Name             string  `json:"name"`
-			Icon             string  `json:"icon"`
-			Status           string  `json:"status"`
-			FileOriginalName string  `json:"file_original_name"`
+			Name        string `json:"name"`
+			ChannelType string `json:"channel_type"`
+			Icon        string `json:"icon"`
+			Status      string `json:"status"`
+
+			FileOriginalName string `json:"file_original_name"`
+			// LetterCount is deprecated, use DeliverableCount instead.
 			LetterCount      int     `json:"letter_count"`
+			DeliverableCount int     `json:"deliverable_count"`
 			AddressPosition  string  `json:"address_position"`
 			PrintMode        string  `json:"print_mode"`
 			PrintSpectrum    string  `json:"print_spectrum"`
@@ -193,11 +236,19 @@ type BatchStatisticsResponse struct {
 		ID         string `json:"id"`
 		Type       string `json:"type"`
 		Attributes struct {
-			TotalLetters     int `json:"total_letters"`
-			ProcessedLetters int `json:"processed_letters"`
-			SentLetters      int `json:"sent_letters"`
-			CancelledLetters int `json:"cancelled_letters"`
-			ErrorLetters     int `json:"error_letters"`
+			LetterValidating int `json:"letter_validating"`
+			LetterGroups     []struct {
+				Name  string `json:"name"`
+				Count int    `json:"count"`
+			} `json:"letter_groups"`
+			LetterCountries []struct {
+				Country string `json:"country"`
+				Count   int    `json:"count"`
+			} `json:"letter_countries"`
+			LetterRegions []struct {
+				Country string `json:"country"`
+				Count   int    `json:"count"`
+			} `json:"letter_regions"`
 		} `json:"attributes"`
 	} `json:"data"`
 }
@@ -233,10 +284,11 @@ func (b *Batches) GetCollection(params map[string]string, suppliedHeaders map[st
 }
 
 func (b *Batches) UploadAndCreateBatch(
-	pathToFile, name string, icon Icon, fileOriginalName string, addressPosition AddressPosition,
+	pathToFile, name string, icon Icon, channelType ChannelType, fileOriginalName string, addressPosition AddressPosition,
 	groupingType GroupingType, groupingOptionsSplitType SplitType,
 	groupingOptionsSplitSize *int,
 	groupingOptionsSplitSeparator *string, groupingOptionsSplitPosition *SplitPosition,
+	relationships map[string]interface{},
 ) (BatchResponse, *errors.PingenError) {
 	fileUpload := fileupload.NewFileUpload(b.apiRequestor)
 
@@ -255,6 +307,7 @@ func (b *Batches) UploadAndCreateBatch(
 		fileResponse.Data.Attributes.URLSignature,
 		name,
 		icon,
+		channelType,
 		fileOriginalName,
 		addressPosition,
 		groupingType,
@@ -262,14 +315,16 @@ func (b *Batches) UploadAndCreateBatch(
 		groupingOptionsSplitSize,
 		groupingOptionsSplitSeparator,
 		groupingOptionsSplitPosition,
+		relationships,
 	)
 }
 
 func (b *Batches) CreateBatch(
-	fileURL, fileURLSignature, name string, icon Icon, fileOriginalName string, addressPosition AddressPosition,
+	fileURL, fileURLSignature, name string, icon Icon, channelType ChannelType, fileOriginalName string, addressPosition AddressPosition,
 	groupingType GroupingType, groupingOptionsSplitType SplitType,
 	groupingOptionsSplitSize *int,
 	groupingOptionsSplitSeparator *string, groupingOptionsSplitPosition *SplitPosition,
+	relationships map[string]interface{},
 ) (BatchResponse, *errors.PingenError) {
 	attributes := map[string]interface{}{
 		"file_url":                    fileURL,
@@ -281,6 +336,11 @@ func (b *Batches) CreateBatch(
 		"grouping_type":               string(groupingType),
 		"grouping_options_split_type": string(groupingOptionsSplitType),
 	}
+
+	if channelType == "" {
+		channelType = ChannelTypePost
+	}
+	attributes["channel_type"] = string(channelType)
 
 	if groupingOptionsSplitSize != nil {
 		attributes["grouping_options_split_size"] = *groupingOptionsSplitSize
@@ -301,6 +361,11 @@ func (b *Batches) CreateBatch(
 		},
 	}
 
+	if relationships != nil {
+		dataMap := payload["data"].(map[string]interface{})
+		dataMap["relationships"] = relationships
+	}
+
 	data, _ := json.Marshal(payload)
 	url := fmt.Sprintf("/organisations/%s/batches", b.organisationID)
 
@@ -314,16 +379,34 @@ func (b *Batches) CreateBatch(
 	return response, nil
 }
 
-func (b *Batches) SendBatch(batchID string, deliveryProducts map[string]string, printMode, printSpectrum string) (BatchResponse, *errors.PingenError) {
+func (b *Batches) SendBatchPost(
+	batchID string, deliveryProduct DeliveryProduct, printMode PrintMode, printSpectrum PrintSpectrum,
+) (BatchResponse, *errors.PingenError) {
+	return b.sendBatch(batchID, "batches_channel_post_send", map[string]interface{}{
+		"delivery_product": string(deliveryProduct),
+		"print_mode":       string(printMode),
+		"print_spectrum":   string(printSpectrum),
+	})
+}
+
+func (b *Batches) SendBatchEmail(batchID string) (BatchResponse, *errors.PingenError) {
+	return b.sendBatch(batchID, "batches_channel_email_send", map[string]interface{}{
+		"delivery_product": string(DeliveryProductElectronicEmail),
+	})
+}
+
+func (b *Batches) SendBatchEbill(batchID string) (BatchResponse, *errors.PingenError) {
+	return b.sendBatch(batchID, "batches_channel_ebill_send", map[string]interface{}{
+		"delivery_product": string(DeliveryProductElectronicEbill),
+	})
+}
+
+func (b *Batches) sendBatch(batchID, dataType string, attributes map[string]interface{}) (BatchResponse, *errors.PingenError) {
 	payload := map[string]interface{}{
 		"data": map[string]interface{}{
-			"id":   batchID,
-			"type": "batches",
-			"attributes": map[string]interface{}{
-				"delivery_products": deliveryProducts,
-				"print_mode":        printMode,
-				"print_spectrum":    printSpectrum,
-			},
+			"id":         batchID,
+			"type":       dataType,
+			"attributes": attributes,
 		},
 	}
 
@@ -345,19 +428,41 @@ func (b *Batches) CancelBatch(batchID string) (interface{}, *errors.PingenError)
 	return b.apiRequestor.PerformCancelRequest(url)
 }
 
-func (b *Batches) DeleteBatch(batchID string) (interface{}, *errors.PingenError) {
-	url := fmt.Sprintf("/organisations/%s/batches/%s", b.organisationID, batchID)
-	return b.apiRequestor.PerformDeleteRequest(url)
-}
-
-func (b *Batches) EditBatch(batchID string, paperTypes []string) (BatchResponse, *errors.PingenError) {
+func (b *Batches) DeleteBatch(batchID string, withDeliverables bool) (interface{}, *errors.PingenError) {
 	payload := map[string]interface{}{
 		"data": map[string]interface{}{
 			"id":   batchID,
 			"type": "batches",
 			"attributes": map[string]interface{}{
-				"paper_types": paperTypes,
+				// with_letters is deprecated but still required, it mirrors with_deliverables.
+				"with_letters":      withDeliverables,
+				"with_deliverables": withDeliverables,
 			},
+		},
+	}
+
+	data, _ := json.Marshal(payload)
+	url := fmt.Sprintf("/organisations/%s/batches/%s", b.organisationID, batchID)
+
+	return b.apiRequestor.PerformDeleteRequestWithPayload(url, data)
+}
+
+func (b *Batches) UpdateBatch(batchID, name string, icon Icon) (BatchResponse, *errors.PingenError) {
+	attributes := map[string]interface{}{}
+
+	if name != "" {
+		attributes["name"] = name
+	}
+
+	if icon != "" {
+		attributes["icon"] = string(icon)
+	}
+
+	payload := map[string]interface{}{
+		"data": map[string]interface{}{
+			"id":         batchID,
+			"type":       "batches",
+			"attributes": attributes,
 		},
 	}
 

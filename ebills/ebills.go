@@ -3,6 +3,7 @@ package ebills
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 
 	"github.com/pingencom/pingen2-sdk-go/api"
 	"github.com/pingencom/pingen2-sdk-go/errors"
@@ -23,11 +24,15 @@ type EbillResponse struct {
 			FileOriginalName    string  `json:"file_original_name"`
 			FilePages           int     `json:"file_pages"`
 			RecipientIdentifier string  `json:"recipient_identifier"`
+			RecipientAddress    string  `json:"recipient_address"`
 			InvoiceNumber       string  `json:"invoice_number"`
 			InvoiceDate         string  `json:"invoice_date"`
 			InvoiceDueDate      string  `json:"invoice_due_date"`
 			InvoiceValue        float64 `json:"invoice_value"`
 			InvoiceCurrency     string  `json:"invoice_currency"`
+			InvoiceIban         string  `json:"invoice_iban"`
+			InvoiceAddress      string  `json:"invoice_address"`
+			InvoiceReference    string  `json:"invoice_reference"`
 			PriceCurrency       string  `json:"price_currency"`
 			PriceValue          float64 `json:"price_value"`
 			Source              string  `json:"source"`
@@ -62,7 +67,22 @@ type EbillResponse struct {
 		Meta struct {
 			Abilities struct {
 				Self struct {
-					Delete string `json:"delete"`
+					GetPdfRaw                 string `json:"get-pdf-raw"`
+					GetPdfValidation          string `json:"get-pdf-validation"`
+					RestoreOriginal           string `json:"restore-original"`
+					Delete                    string `json:"delete"`
+					Cancel                    string `json:"cancel"`
+					Submit                    string `json:"submit"`
+					ApplyPreset               string `json:"apply-preset"`
+					CreatePreset              string `json:"create-preset"`
+					Revalidate                string `json:"revalidate"`
+					AddAttachment             string `json:"add-attachment"`
+					FixFormat                 string `json:"fix-format"`
+					DefineQr                  string `json:"define-qr"`
+					DefineInvoiceDate         string `json:"define-invoice-date"`
+					DefineInvoiceDueDate      string `json:"define-invoice-due-date"`
+					DefineRecipientIdentifier string `json:"define-recipient-identifier"`
+					DefineInvoiceNumber       string `json:"define-invoice-number"`
 				} `json:"self"`
 			} `json:"abilities"`
 		} `json:"meta"`
@@ -79,11 +99,15 @@ type EbillCollectionResponse struct {
 			FileOriginalName    string  `json:"file_original_name"`
 			FilePages           int     `json:"file_pages"`
 			RecipientIdentifier string  `json:"recipient_identifier"`
+			RecipientAddress    string  `json:"recipient_address"`
 			InvoiceNumber       string  `json:"invoice_number"`
 			InvoiceDate         string  `json:"invoice_date"`
 			InvoiceDueDate      string  `json:"invoice_due_date"`
 			InvoiceValue        float64 `json:"invoice_value"`
 			InvoiceCurrency     string  `json:"invoice_currency"`
+			InvoiceIban         string  `json:"invoice_iban"`
+			InvoiceAddress      string  `json:"invoice_address"`
+			InvoiceReference    string  `json:"invoice_reference"`
 			PriceCurrency       string  `json:"price_currency"`
 			PriceValue          float64 `json:"price_value"`
 			Source              string  `json:"source"`
@@ -227,4 +251,40 @@ func (e *Ebills) Create(
 	}
 
 	return response, nil
+}
+
+func (e *Ebills) Send(ebillID string) (EbillResponse, *errors.PingenError) {
+	payload := map[string]interface{}{
+		"data": map[string]interface{}{
+			"id":   ebillID,
+			"type": "ebills",
+		},
+	}
+
+	data, _ := json.Marshal(payload)
+	url := fmt.Sprintf("/organisations/%s/deliveries/ebills/%s/send", e.organisationID, ebillID)
+
+	var response EbillResponse
+
+	_, err := e.apiRequestor.PerformPatchRequest(url, &response, data, nil)
+	if err != nil {
+		return EbillResponse{}, err
+	}
+
+	return response, nil
+}
+
+func (e *Ebills) Cancel(ebillID string) (interface{}, *errors.PingenError) {
+	url := fmt.Sprintf("/organisations/%s/deliveries/ebills/%s/cancel", e.organisationID, ebillID)
+	return e.apiRequestor.PerformCancelRequest(url)
+}
+
+func (e *Ebills) Delete(ebillID string) (interface{}, *errors.PingenError) {
+	url := fmt.Sprintf("/organisations/%s/deliveries/ebills/%s", e.organisationID, ebillID)
+	return e.apiRequestor.PerformDeleteRequest(url)
+}
+
+func (e *Ebills) GetFile(ebillID string) (io.ReadCloser, *errors.PingenError) {
+	url := fmt.Sprintf("/organisations/%s/deliveries/ebills/%s/file", e.organisationID, ebillID)
+	return e.apiRequestor.PerformStreamRequest(url)
 }

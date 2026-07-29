@@ -5,8 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/pingencom/pingen2-sdk-go"
 	"github.com/pingencom/pingen2-sdk-go/api"
+	"github.com/pingencom/pingen2-sdk-go/config"
 	"github.com/pingencom/pingen2-sdk-go/letterevents"
 	"github.com/stretchr/testify/assert"
 )
@@ -66,7 +66,7 @@ const mockValidJSONResponse = `{
 }`
 
 func setupLetterEvents(apiBaseURL string) *letterevents.LetterEvents {
-	config, _ := pingen2sdk.InitSDK("testSetClientId", "testSetClientSecret", "")
+	config, _ := config.InitSDK("testSetClientId", "testSetClientSecret", "")
 	config.SetAPIBaseURL(apiBaseURL)
 	apiRequestor := api.NewAPIRequestor("dummyToken", config)
 
@@ -180,4 +180,46 @@ func TestGetSentCollection(t *testing.T) {
 	assert.NotNil(t, response)
 	assert.Len(t, response.Data, 1)
 	assert.Equal(t, 1, response.Meta.CurrentPage)
+}
+
+func TestGetDeliveredCollection(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1/deliveries/letters/events/delivered", r.URL.Path)
+		assert.Equal(t, http.MethodGet, r.Method)
+
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		w.WriteHeader(http.StatusOK)
+
+		_, _ = w.Write([]byte(mockValidJSONResponse))
+	}))
+	defer server.Close()
+
+	letterEvents := setupLetterEvents(server.URL)
+
+	response, err := letterEvents.GetDeliveredCollection(nil, nil)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, response)
+	assert.Len(t, response.Data, 1)
+	assert.Equal(t, 1, response.Meta.CurrentPage)
+}
+
+func TestGetDeliveredCollection_Error(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		w.Header().Set("X-Request-Id", "requestx-yyyy-yyyy-yyyy-yyyyyyyyyyy2")
+		w.WriteHeader(http.StatusUnauthorized)
+
+		responseJSON := `{"error":"invalid_client","error_description":"Client authentication failed","message":"Client authentication failed"}`
+		_, _ = w.Write([]byte(responseJSON))
+	}))
+	defer server.Close()
+
+	letterEvents := setupLetterEvents(server.URL)
+
+	_, err := letterEvents.GetDeliveredCollection(nil, nil)
+
+	assert.NotNil(t, err)
+	expectedMessage := "PingenError: API error (Status Code: 401, Request ID: requestx-yyyy-yyyy-yyyy-yyyyyyyyyyy2)"
+	assert.Equal(t, expectedMessage, err.Error())
 }
