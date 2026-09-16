@@ -19,7 +19,7 @@ func buildOAuth(t *testing.T) (*oauth.OAuth, *config.Config) {
 
 	creds := requireCredentials(t)
 
-	config, err := config.InitSDK(creds.ClientID, creds.ClientSecret, environment(creds))
+	config, err := config.InitSDK(creds.ClientID, creds.ClientSecret, environment)
 	if err != nil {
 		t.Fatalf("Failed to initialise the SDK: %v", err)
 	}

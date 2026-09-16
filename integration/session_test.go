@@ -15,8 +15,7 @@ import (
 type session struct {
 	*pingen2sdk.Client
 
-	creds            credentials
-	organisationName string
+	creds credentials
 }
 
 var (
@@ -45,7 +44,7 @@ func buildSession(creds credentials) (*session, error) {
 	pingen, err := pingen2sdk.New(pingen2sdk.Options{
 		ClientID:     creds.ClientID,
 		ClientSecret: creds.ClientSecret,
-		Environment:  environment(creds),
+		Environment:  environment,
 		Scope:        Scope,
 	})
 	if err != nil {
@@ -58,9 +57,8 @@ func buildSession(creds credentials) (*session, error) {
 	}
 
 	return &session{
-		Client:           pingen.ForOrganisation(organisationID),
-		creds:            creds,
-		organisationName: creds.OrganisationName,
+		Client: pingen.ForOrganisation(organisationID),
+		creds:  creds,
 	}, nil
 }
 

@@ -31,12 +31,13 @@ const (
 )
 
 const (
-	envClientID         = "PINGEN2_CLIENT_ID"
-	envClientSecret     = "PINGEN2_CLIENT_SECRET"
-	envOrganisationID   = "PINGEN2_ORGANIZATION_ID"
-	envOrganisationName = "PINGEN2_ORGANIZATION_NAME"
-	envUseStaging       = "PINGEN2_USE_STAGING"
+	envClientID       = "PINGEN2_CLIENT_ID"
+	envClientSecret   = "PINGEN2_CLIENT_SECRET"
+	envOrganisationID = "PINGEN2_ORGANISATION_ID"
 )
+
+// The suite must never run against production.
+const environment = "staging"
 
 const missingCredentialsMessage = "Integration credentials not configured. " +
 	"Copy .env.example to .env and fill in PINGEN2_CLIENT_ID / PINGEN2_CLIENT_SECRET."
@@ -44,11 +45,9 @@ const missingCredentialsMessage = "Integration credentials not configured. " +
 const ebillChannelMissingCode = "conflict_missing_configuration"
 
 type credentials struct {
-	ClientID         string
-	ClientSecret     string
-	OrganisationID   string
-	OrganisationName string
-	UseStaging       bool
+	ClientID       string
+	ClientSecret   string
+	OrganisationID string
 }
 
 func loadCredentials() credentials {
@@ -62,11 +61,9 @@ func loadCredentials() credentials {
 	}
 
 	return credentials{
-		ClientID:         value(envClientID),
-		ClientSecret:     value(envClientSecret),
-		OrganisationID:   value(envOrganisationID),
-		OrganisationName: value(envOrganisationName),
-		UseStaging:       useStaging(value(envUseStaging)),
+		ClientID:       value(envClientID),
+		ClientSecret:   value(envClientSecret),
+		OrganisationID: value(envOrganisationID),
 	}
 }
 
@@ -79,24 +76,6 @@ func requireCredentials(t *testing.T) credentials {
 	}
 
 	return creds
-}
-
-// Defaults to staging: the suite must never run against production.
-func environment(c credentials) string {
-	if c.UseStaging {
-		return "staging"
-	}
-
-	return "production"
-}
-
-func useStaging(raw string) bool {
-	switch strings.ToLower(strings.TrimSpace(raw)) {
-	case "0", "false", "no", "off":
-		return false
-	default:
-		return true
-	}
 }
 
 func documentPath(fileName string) string {

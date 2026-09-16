@@ -67,9 +67,6 @@ func TestOrganisations(t *testing.T) {
 		}
 
 		assert.Equal(t, s.OrganisationID(), response.Data.ID)
-		if s.organisationName != "" {
-			assert.Equal(t, s.organisationName, response.Data.Attributes.Name)
-		}
 	})
 }
 

@@ -59,7 +59,7 @@ Keep your credentials out of the source and read them from the environment:
 ```sh
 export PINGEN2_CLIENT_ID=yourClientId
 export PINGEN2_CLIENT_SECRET=yourClientSecret
-export PINGEN2_ORGANIZATION_ID=yourOrganisationId
+export PINGEN2_ORGANISATION_ID=yourOrganisationId
 ```
 
 The SDK never reads the environment itself — pass the values in explicitly, so
@@ -78,7 +78,7 @@ pingen, err := pingen2sdk.New(pingen2sdk.Options{
     ClientSecret:   os.Getenv("PINGEN2_CLIENT_SECRET"),
     Environment:    "staging",
     Scope:          "letter batch webhook organisation_read email ebill",
-    OrganisationID: os.Getenv("PINGEN2_ORGANIZATION_ID"),
+    OrganisationID: os.Getenv("PINGEN2_ORGANISATION_ID"),
 })
 if err != nil {
     log.Fatalf("Error creating client: %v", err)
@@ -228,10 +228,9 @@ credentials:
   make test-integration
 ```
 
-`PINGEN2_ORGANIZATION_ID` is optional — when it is empty the suite uses the
-first organisation your credentials can see. `PINGEN2_ORGANIZATION_NAME` is
-optional too and is asserted only when set. `PINGEN2_USE_STAGING` defaults to
-`true` and should stay that way.
+`PINGEN2_ORGANISATION_ID` is optional — when it is empty the suite uses the
+first organisation your credentials can see. The suite always runs against
+staging — that is not configurable.
 
 The suite is **skipped automatically when the credentials are absent**, so
 `make test`, `make check` and `make ci` stay offline and green without a `.env`
