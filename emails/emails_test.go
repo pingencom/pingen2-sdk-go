@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/pingencom/pingen2-sdk-go"
 	"github.com/pingencom/pingen2-sdk-go/api"
+	"github.com/pingencom/pingen2-sdk-go/config"
 	"github.com/pingencom/pingen2-sdk-go/emails"
 	"github.com/stretchr/testify/assert"
 )
@@ -19,7 +19,7 @@ const mockResponse = `{
 		"type": "emails",
 		"attributes": {
 			"status": "send",
-			"file_original_name": "lorem.pdf",
+			"file_original_name": "test.pdf",
 			"file_pages": 2,
 			"recipient_identifier": "info@test.com",
 			"price_currency": "CHF",
@@ -56,7 +56,15 @@ const mockResponse = `{
 		"meta": {
 			"abilities": {
 				"self": {
-					"delete": "state"
+					"get-pdf-raw": "allowed",
+					"get-pdf-validation": "allowed",
+					"restore-original": "state",
+					"delete": "state",
+					"cancel": "state",
+					"apply-preset": "state",
+					"create-preset": "allowed",
+					"revalidate": "state",
+					"add-attachment": "state"
 				}
 			}
 		}
@@ -76,7 +84,7 @@ func setupUnauthorizedServer() *httptest.Server {
 }
 
 func setupEmail(apiBaseURL string) *emails.Emails {
-	config, _ := pingen2sdk.InitSDK("testSetClientId", "testSetClientSecret", "")
+	config, _ := config.InitSDK("testSetClientId", "testSetClientSecret", "")
 	config.SetAPIBaseURL(apiBaseURL)
 	apiRequestor := api.NewAPIRequestor("dummyToken", config)
 
@@ -102,7 +110,7 @@ func TestGetDetails(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxx11", resp.Data.ID)
-	assert.Equal(t, "lorem.pdf", resp.Data.Attributes.FileOriginalName)
+	assert.Equal(t, "test.pdf", resp.Data.Attributes.FileOriginalName)
 	assert.Equal(t, "2025-11-29T09:42:48+0100", resp.Data.Attributes.SubmittedAt)
 }
 
@@ -129,7 +137,7 @@ func TestGetCollection(t *testing.T) {
 				"type": "emails",
 				"attributes": {
                     "status": "send",
-                    "file_original_name": "lorem.pdf",
+                    "file_original_name": "test.pdf",
                     "file_pages": 2,
                     "recipient_identifier": "info@test.com",
                     "price_currency": "CHF",
@@ -187,7 +195,7 @@ func TestGetCollection(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Len(t, resp.Data, 1)
 	assert.Equal(t, "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxx11", resp.Data[0].ID)
-	assert.Equal(t, "lorem.pdf", resp.Data[0].Attributes.FileOriginalName)
+	assert.Equal(t, "test.pdf", resp.Data[0].Attributes.FileOriginalName)
 	assert.Equal(t, 2, resp.Data[0].Attributes.FilePages)
 	assert.Equal(t, 1, resp.Meta.CurrentPage)
 	assert.Equal(t, 10, resp.Meta.PerPage)
@@ -273,7 +281,7 @@ func TestUploadAndCreate(t *testing.T) {
 
 	emailClient := setupEmail(server.URL)
 
-	filePath := "testFile.pdf"
+	filePath := "../testdata/test.pdf"
 
 	resp, err := emailClient.UploadAndCreate(
 		filePath,
@@ -303,7 +311,7 @@ func TestUploadAndCreate_Error(t *testing.T) {
 	defer server.Close()
 
 	emailClient := setupEmail(server.URL)
-	filePath := "testFile.pdf"
+	filePath := "../testdata/test.pdf"
 
 	_, err := emailClient.UploadAndCreate(
 		filePath,
@@ -363,7 +371,7 @@ func TestUploadAndCreate_ErrorInPut(t *testing.T) {
 	defer server.Close()
 
 	emailClient := setupEmail(server.URL)
-	filePath := "testFile.pdf"
+	filePath := "../testdata/test.pdf"
 
 	_, err := emailClient.UploadAndCreate(
 		filePath,
@@ -403,7 +411,7 @@ func TestCreate(t *testing.T) {
 	}
 	emailClient := setupEmail(server.URL)
 
-	filePath := "testFile.pdf"
+	filePath := "../testdata/test.pdf"
 
 	resp, err := emailClient.Create(
 		filePath,
@@ -437,4 +445,123 @@ func TestCreate_Error(t *testing.T) {
 	assert.NotNil(t, err)
 	expectedMessage := "PingenError: API error (Status Code: 401, Request ID: requestx-yyyy-yyyy-yyyy-yyyyyyyyyy12)"
 	assert.Equal(t, expectedMessage, err.Error())
+}
+
+func TestGetDetailsAbilities(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(mockResponse))
+	}))
+	defer server.Close()
+
+	emailClient := setupEmail(server.URL)
+
+	resp, err := emailClient.GetDetails("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxx11", nil, nil)
+
+	assert.Nil(t, err)
+	assert.Equal(t, "allowed", resp.Data.Meta.Abilities.Self.GetPdfRaw)
+	assert.Equal(t, "allowed", resp.Data.Meta.Abilities.Self.GetPdfValidation)
+	assert.Equal(t, "state", resp.Data.Meta.Abilities.Self.RestoreOriginal)
+	assert.Equal(t, "state", resp.Data.Meta.Abilities.Self.Delete)
+	assert.Equal(t, "state", resp.Data.Meta.Abilities.Self.Cancel)
+	assert.Equal(t, "state", resp.Data.Meta.Abilities.Self.ApplyPreset)
+	assert.Equal(t, "allowed", resp.Data.Meta.Abilities.Self.CreatePreset)
+	assert.Equal(t, "state", resp.Data.Meta.Abilities.Self.Revalidate)
+	assert.Equal(t, "state", resp.Data.Meta.Abilities.Self.AddAttachment)
+}
+
+func TestCancel(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxx11/deliveries/emails/emailxxx-xxxx-xxxx-xxxx-xxxxxxxxxx11/cancel", r.URL.Path)
+		assert.Equal(t, http.MethodPatch, r.Method)
+
+		w.WriteHeader(http.StatusAccepted)
+	}))
+	defer server.Close()
+
+	emailClient := setupEmail(server.URL)
+
+	resp, err := emailClient.Cancel("emailxxx-xxxx-xxxx-xxxx-xxxxxxxxxx11")
+
+	assert.Nil(t, err)
+	assert.NotNil(t, resp)
+}
+
+func TestCancel_Error(t *testing.T) {
+	server := setupUnauthorizedServer()
+	defer server.Close()
+
+	emailClient := setupEmail(server.URL)
+
+	_, err := emailClient.Cancel("emailxxx-xxxx-xxxx-xxxx-xxxxxxxxxx11")
+
+	assert.NotNil(t, err)
+	expectedMessage := "PingenError: API error (Status Code: 401, Request ID: requestx-yyyy-yyyy-yyyy-yyyyyyyyyy12)"
+	assert.Equal(t, expectedMessage, err.Error())
+}
+
+func TestDelete(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxx11/deliveries/emails/emailxxx-xxxx-xxxx-xxxx-xxxxxxxxxx11", r.URL.Path)
+		assert.Equal(t, http.MethodDelete, r.Method)
+
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	emailClient := setupEmail(server.URL)
+
+	resp, err := emailClient.Delete("emailxxx-xxxx-xxxx-xxxx-xxxxxxxxxx11")
+
+	assert.Nil(t, err)
+	assert.NotNil(t, resp)
+}
+
+func TestDelete_Error(t *testing.T) {
+	server := setupUnauthorizedServer()
+	defer server.Close()
+
+	emailClient := setupEmail(server.URL)
+
+	_, err := emailClient.Delete("emailxxx-xxxx-xxxx-xxxx-xxxxxxxxxx11")
+
+	assert.NotNil(t, err)
+	expectedMessage := "PingenError: API error (Status Code: 401, Request ID: requestx-yyyy-yyyy-yyyy-yyyyyyyyyy12)"
+	assert.Equal(t, expectedMessage, err.Error())
+}
+
+func TestGetFile(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxxx11/deliveries/emails/emailxxx-xxxx-xxxx-xxxx-xxxxxxxxxx11/file", r.URL.Path)
+		assert.Equal(t, http.MethodGet, r.Method)
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = io.WriteString(w, "mock file content")
+	}))
+	defer server.Close()
+
+	emailClient := setupEmail(server.URL)
+
+	stream, err := emailClient.GetFile("emailxxx-xxxx-xxxx-xxxx-xxxxxxxxxx11")
+
+	assert.Nil(t, err)
+	assert.NotNil(t, stream)
+
+	defer stream.Close()
+	responseData, readErr := io.ReadAll(stream)
+	assert.Nil(t, readErr)
+	assert.Equal(t, "mock file content", string(responseData))
+}
+
+func TestGetFile_Error(t *testing.T) {
+	server := setupUnauthorizedServer()
+	defer server.Close()
+
+	emailClient := setupEmail(server.URL)
+
+	stream, err := emailClient.GetFile("emailxxx-xxxx-xxxx-xxxx-xxxxxxxxxx11")
+
+	assert.Nil(t, stream)
+	assert.NotNil(t, err)
 }

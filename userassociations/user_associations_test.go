@@ -5,14 +5,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/pingencom/pingen2-sdk-go"
 	"github.com/pingencom/pingen2-sdk-go/api"
+	"github.com/pingencom/pingen2-sdk-go/config"
 	"github.com/pingencom/pingen2-sdk-go/userassociations"
 	"github.com/stretchr/testify/assert"
 )
 
 func setupUserAssociations(apiBaseURL string) *userassociations.UserAssociations {
-	config, _ := pingen2sdk.InitSDK("testSetClientId", "testSetClientSecret", "")
+	config, _ := config.InitSDK("testSetClientId", "testSetClientSecret", "")
 	config.SetAPIBaseURL(apiBaseURL)
 	apiRequestor := api.NewAPIRequestor("dummyToken", config)
 

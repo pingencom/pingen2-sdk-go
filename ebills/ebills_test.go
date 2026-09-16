@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/pingencom/pingen2-sdk-go"
 	"github.com/pingencom/pingen2-sdk-go/api"
+	"github.com/pingencom/pingen2-sdk-go/config"
 	"github.com/pingencom/pingen2-sdk-go/ebills"
 	"github.com/stretchr/testify/assert"
 )
@@ -19,7 +19,7 @@ const mockResponse = `{
 		"type": "ebills",
 		"attributes": {
 			"status": "send",
-			"file_original_name": "lorem.pdf",
+			"file_original_name": "test.pdf",
 			"file_pages": 2,
 			"recipient_identifier": "41100010014282213",
 			"invoice_number": "Invoice 8051",
@@ -27,6 +27,10 @@ const mockResponse = `{
             "invoice_due_date": "2025-10-30",
             "invoice_value": 1250.3,
             "invoice_currency": "CHF",
+            "recipient_address": "Test Company, Sample Street 1, 8000 Zurich",
+            "invoice_iban": "CH9300762011623852957",
+            "invoice_address": "Sender AG, Sender Street 5, 8000 Zurich",
+            "invoice_reference": "210000000003139471430009017",
 			"price_currency": "CHF",
 			"price_value": 1.25,
 			"source": "api",
@@ -61,7 +65,22 @@ const mockResponse = `{
 		"meta": {
 			"abilities": {
 				"self": {
-					"delete": "state"
+					"get-pdf-raw": "allowed",
+					"get-pdf-validation": "allowed",
+					"restore-original": "state",
+					"delete": "state",
+					"cancel": "state",
+					"submit": "state",
+					"apply-preset": "state",
+					"create-preset": "allowed",
+					"revalidate": "state",
+					"add-attachment": "state",
+					"fix-format": "state",
+					"define-qr": "state",
+					"define-invoice-date": "state",
+					"define-invoice-due-date": "state",
+					"define-recipient-identifier": "state",
+					"define-invoice-number": "state"
 				}
 			}
 		}
@@ -81,7 +100,7 @@ func setupUnauthorizedServer() *httptest.Server {
 }
 
 func setupEbill(apiBaseURL string) *ebills.Ebills {
-	config, _ := pingen2sdk.InitSDK("testSetClientId", "testSetClientSecret", "")
+	config, _ := config.InitSDK("testSetClientId", "testSetClientSecret", "")
 	config.SetAPIBaseURL(apiBaseURL)
 	apiRequestor := api.NewAPIRequestor("dummyToken", config)
 
@@ -107,7 +126,7 @@ func TestGetDetails(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxx111", resp.Data.ID)
-	assert.Equal(t, "lorem.pdf", resp.Data.Attributes.FileOriginalName)
+	assert.Equal(t, "test.pdf", resp.Data.Attributes.FileOriginalName)
 	assert.Equal(t, "2025-11-29T09:42:48+0100", resp.Data.Attributes.SubmittedAt)
 }
 
@@ -134,7 +153,7 @@ func TestGetCollection(t *testing.T) {
 				"type": "ebills",
 				"attributes": {
                     "status": "send",
-                    "file_original_name": "lorem.pdf",
+                    "file_original_name": "test.pdf",
                     "file_pages": 2,
                     "recipient_identifier": "41100010014282213",
                     "invoice_number": "Invoice 8051",
@@ -197,7 +216,7 @@ func TestGetCollection(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Len(t, resp.Data, 1)
 	assert.Equal(t, "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxx111", resp.Data[0].ID)
-	assert.Equal(t, "lorem.pdf", resp.Data[0].Attributes.FileOriginalName)
+	assert.Equal(t, "test.pdf", resp.Data[0].Attributes.FileOriginalName)
 	assert.Equal(t, 2, resp.Data[0].Attributes.FilePages)
 	assert.Equal(t, 1, resp.Meta.CurrentPage)
 	assert.Equal(t, 10, resp.Meta.PerPage)
@@ -280,7 +299,7 @@ func TestUploadAndCreate(t *testing.T) {
 
 	ebillClient := setupEbill(server.URL)
 
-	filePath := "testFile.pdf"
+	filePath := "../testdata/test.pdf"
 
 	resp, err := ebillClient.UploadAndCreate(
 		filePath,
@@ -307,7 +326,7 @@ func TestUploadAndCreate_Error(t *testing.T) {
 	defer server.Close()
 
 	ebillClient := setupEbill(server.URL)
-	filePath := "testFile.pdf"
+	filePath := "../testdata/test.pdf"
 
 	_, err := ebillClient.UploadAndCreate(
 		filePath,
@@ -364,7 +383,7 @@ func TestUploadAndCreate_ErrorInPut(t *testing.T) {
 	defer server.Close()
 
 	ebillClient := setupEbill(server.URL)
-	filePath := "testFile.pdf"
+	filePath := "../testdata/test.pdf"
 
 	_, err := ebillClient.UploadAndCreate(
 		filePath,
@@ -401,7 +420,7 @@ func TestCreate(t *testing.T) {
 	}
 	ebillClient := setupEbill(server.URL)
 
-	filePath := "testFile.pdf"
+	filePath := "../testdata/test.pdf"
 
 	resp, err := ebillClient.Create(
 		filePath,
@@ -435,4 +454,178 @@ func TestCreate_Error(t *testing.T) {
 	assert.NotNil(t, err)
 	expectedMessage := "PingenError: API error (Status Code: 401, Request ID: requestx-yyyy-yyyy-yyyy-yyyyyyyyy112)"
 	assert.Equal(t, expectedMessage, err.Error())
+}
+
+func TestGetDetailsAbilities(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(mockResponse))
+	}))
+	defer server.Close()
+
+	ebillClient := setupEbill(server.URL)
+
+	resp, err := ebillClient.GetDetails("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxx111", nil, nil)
+
+	assert.Nil(t, err)
+	assert.Equal(t, "Test Company, Sample Street 1, 8000 Zurich", resp.Data.Attributes.RecipientAddress)
+	assert.Equal(t, "CH9300762011623852957", resp.Data.Attributes.InvoiceIban)
+	assert.Equal(t, "Sender AG, Sender Street 5, 8000 Zurich", resp.Data.Attributes.InvoiceAddress)
+	assert.Equal(t, "210000000003139471430009017", resp.Data.Attributes.InvoiceReference)
+
+	assert.Equal(t, "allowed", resp.Data.Meta.Abilities.Self.GetPdfRaw)
+	assert.Equal(t, "allowed", resp.Data.Meta.Abilities.Self.GetPdfValidation)
+	assert.Equal(t, "state", resp.Data.Meta.Abilities.Self.RestoreOriginal)
+	assert.Equal(t, "state", resp.Data.Meta.Abilities.Self.Delete)
+	assert.Equal(t, "state", resp.Data.Meta.Abilities.Self.Cancel)
+	assert.Equal(t, "state", resp.Data.Meta.Abilities.Self.Submit)
+	assert.Equal(t, "state", resp.Data.Meta.Abilities.Self.ApplyPreset)
+	assert.Equal(t, "allowed", resp.Data.Meta.Abilities.Self.CreatePreset)
+	assert.Equal(t, "state", resp.Data.Meta.Abilities.Self.Revalidate)
+	assert.Equal(t, "state", resp.Data.Meta.Abilities.Self.AddAttachment)
+	assert.Equal(t, "state", resp.Data.Meta.Abilities.Self.FixFormat)
+	assert.Equal(t, "state", resp.Data.Meta.Abilities.Self.DefineQr)
+	assert.Equal(t, "state", resp.Data.Meta.Abilities.Self.DefineInvoiceDate)
+	assert.Equal(t, "state", resp.Data.Meta.Abilities.Self.DefineInvoiceDueDate)
+	assert.Equal(t, "state", resp.Data.Meta.Abilities.Self.DefineRecipientIdentifier)
+	assert.Equal(t, "state", resp.Data.Meta.Abilities.Self.DefineInvoiceNumber)
+}
+
+func TestSend(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxx111/deliveries/ebills/ebillxxx-xxxx-xxxx-xxxx-xxxxxxxxx111/send", r.URL.Path)
+		assert.Equal(t, http.MethodPatch, r.Method)
+
+		body, readErr := io.ReadAll(r.Body)
+		assert.Nil(t, readErr)
+		expectedPayload := `{
+            "data": {
+                "id": "ebillxxx-xxxx-xxxx-xxxx-xxxxxxxxx111",
+                "type": "ebills"
+            }
+        }`
+		assert.JSONEq(t, expectedPayload, string(body))
+
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(mockResponse))
+	}))
+	defer server.Close()
+
+	ebillClient := setupEbill(server.URL)
+
+	resp, err := ebillClient.Send("ebillxxx-xxxx-xxxx-xxxx-xxxxxxxxx111")
+
+	assert.Nil(t, err)
+	assert.NotNil(t, resp)
+	assert.Equal(t, "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxx111", resp.Data.ID)
+}
+
+func TestSend_Error(t *testing.T) {
+	server := setupUnauthorizedServer()
+	defer server.Close()
+
+	ebillClient := setupEbill(server.URL)
+
+	_, err := ebillClient.Send("ebillxxx-xxxx-xxxx-xxxx-xxxxxxxxx111")
+
+	assert.NotNil(t, err)
+	expectedMessage := "PingenError: API error (Status Code: 401, Request ID: requestx-yyyy-yyyy-yyyy-yyyyyyyyy112)"
+	assert.Equal(t, expectedMessage, err.Error())
+}
+
+func TestCancel(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxx111/deliveries/ebills/ebillxxx-xxxx-xxxx-xxxx-xxxxxxxxx111/cancel", r.URL.Path)
+		assert.Equal(t, http.MethodPatch, r.Method)
+
+		w.WriteHeader(http.StatusAccepted)
+	}))
+	defer server.Close()
+
+	ebillClient := setupEbill(server.URL)
+
+	resp, err := ebillClient.Cancel("ebillxxx-xxxx-xxxx-xxxx-xxxxxxxxx111")
+
+	assert.Nil(t, err)
+	assert.NotNil(t, resp)
+}
+
+func TestCancel_Error(t *testing.T) {
+	server := setupUnauthorizedServer()
+	defer server.Close()
+
+	ebillClient := setupEbill(server.URL)
+
+	_, err := ebillClient.Cancel("ebillxxx-xxxx-xxxx-xxxx-xxxxxxxxx111")
+
+	assert.NotNil(t, err)
+	expectedMessage := "PingenError: API error (Status Code: 401, Request ID: requestx-yyyy-yyyy-yyyy-yyyyyyyyy112)"
+	assert.Equal(t, expectedMessage, err.Error())
+}
+
+func TestDelete(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxx111/deliveries/ebills/ebillxxx-xxxx-xxxx-xxxx-xxxxxxxxx111", r.URL.Path)
+		assert.Equal(t, http.MethodDelete, r.Method)
+
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	ebillClient := setupEbill(server.URL)
+
+	resp, err := ebillClient.Delete("ebillxxx-xxxx-xxxx-xxxx-xxxxxxxxx111")
+
+	assert.Nil(t, err)
+	assert.NotNil(t, resp)
+}
+
+func TestDelete_Error(t *testing.T) {
+	server := setupUnauthorizedServer()
+	defer server.Close()
+
+	ebillClient := setupEbill(server.URL)
+
+	_, err := ebillClient.Delete("ebillxxx-xxxx-xxxx-xxxx-xxxxxxxxx111")
+
+	assert.NotNil(t, err)
+	expectedMessage := "PingenError: API error (Status Code: 401, Request ID: requestx-yyyy-yyyy-yyyy-yyyyyyyyy112)"
+	assert.Equal(t, expectedMessage, err.Error())
+}
+
+func TestGetFile(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/organisations/testxxxx-xxxx-xxxx-xxxx-xxxxxxxxx111/deliveries/ebills/ebillxxx-xxxx-xxxx-xxxx-xxxxxxxxx111/file", r.URL.Path)
+		assert.Equal(t, http.MethodGet, r.Method)
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = io.WriteString(w, "mock file content")
+	}))
+	defer server.Close()
+
+	ebillClient := setupEbill(server.URL)
+
+	stream, err := ebillClient.GetFile("ebillxxx-xxxx-xxxx-xxxx-xxxxxxxxx111")
+
+	assert.Nil(t, err)
+	assert.NotNil(t, stream)
+
+	defer stream.Close()
+	responseData, readErr := io.ReadAll(stream)
+	assert.Nil(t, readErr)
+	assert.Equal(t, "mock file content", string(responseData))
+}
+
+func TestGetFile_Error(t *testing.T) {
+	server := setupUnauthorizedServer()
+	defer server.Close()
+
+	ebillClient := setupEbill(server.URL)
+
+	stream, err := ebillClient.GetFile("ebillxxx-xxxx-xxxx-xxxx-xxxxxxxxx111")
+
+	assert.Nil(t, stream)
+	assert.NotNil(t, err)
 }

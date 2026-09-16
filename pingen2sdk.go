@@ -1,81 +1,110 @@
 package pingen2sdk
 
 import (
-	"fmt"
-	"time"
+	"github.com/pingencom/pingen2-sdk-go/api"
+	"github.com/pingencom/pingen2-sdk-go/batches"
+	"github.com/pingencom/pingen2-sdk-go/batchevents"
+	"github.com/pingencom/pingen2-sdk-go/config"
+	"github.com/pingencom/pingen2-sdk-go/ebillevents"
+	"github.com/pingencom/pingen2-sdk-go/ebills"
+	"github.com/pingencom/pingen2-sdk-go/emailevents"
+	"github.com/pingencom/pingen2-sdk-go/emails"
+	"github.com/pingencom/pingen2-sdk-go/letterevents"
+	"github.com/pingencom/pingen2-sdk-go/letters"
+	"github.com/pingencom/pingen2-sdk-go/oauth"
+	"github.com/pingencom/pingen2-sdk-go/organisations"
+	"github.com/pingencom/pingen2-sdk-go/userassociations"
+	"github.com/pingencom/pingen2-sdk-go/users"
+	"github.com/pingencom/pingen2-sdk-go/webhooks"
 )
 
-type Config struct {
-	clientID          string
-	clientSecret      string
-	environment       string
-	requestTimeout    time.Duration
-	apiProductionUrl  string
-	authProductionUrl string
-	apiStagingUrl     string
-	authStagingUrl    string
-}
+// Config is the SDK configuration. It is an alias, so a *Config obtained from
+// InitSDK is the same type the api and oauth packages take.
+type Config = config.Config
 
 func InitSDK(clientID, clientSecret, environment string) (*Config, error) {
-	if environment == "" {
-		environment = "production"
+	return config.InitSDK(clientID, clientSecret, environment)
+}
+
+func InitSDKWithoutCredentials(environment string) *Config {
+	return config.InitSDKWithoutCredentials(environment)
+}
+
+type Options struct {
+	ClientID       string
+	ClientSecret   string
+	Environment    string
+	Scope          string
+	OrganisationID string
+	AccessToken    string
+}
+
+type Client struct {
+	Config    *Config
+	OAuth     *oauth.OAuth
+	Requestor *api.APIRequestor
+
+	Organisations    *organisations.Organisations
+	Users            *users.Users
+	UserAssociations *userassociations.UserAssociations
+	Letters          *letters.Letters
+	LetterEvents     *letterevents.LetterEvents
+	Batches          *batches.Batches
+	BatchEvents      *batchevents.BatchEvents
+	Webhooks         *webhooks.Webhooks
+	Emails           *emails.Emails
+	EmailEvents      *emailevents.EmailEvents
+	Ebills           *ebills.Ebills
+	EbillEvents      *ebillevents.EbillEvents
+
+	organisationID string
+}
+
+func New(opts Options) (*Client, error) {
+	c := &Client{organisationID: opts.OrganisationID}
+
+	if opts.AccessToken != "" {
+		c.Config = config.InitSDKWithoutCredentials(opts.Environment)
+		c.Requestor = api.NewAPIRequestor(opts.AccessToken, c.Config)
+	} else {
+		config, err := config.InitSDK(opts.ClientID, opts.ClientSecret, opts.Environment)
+		if err != nil {
+			return nil, err
+		}
+
+		c.Config = config
+		c.OAuth = oauth.NewOAuth(config, opts.Scope)
+		c.Requestor = api.NewAPIRequestorWithTokenSource(c.OAuth, config)
 	}
 
-	config := &Config{
-		clientID:          clientID,
-		clientSecret:      clientSecret,
-		environment:       environment,
-		requestTimeout:    20 * time.Second,
-		apiProductionUrl:  "https://api.pingen.com",
-		authProductionUrl: "https://identity.pingen.com",
-		apiStagingUrl:     "https://api-staging.pingen.com",
-		authStagingUrl:    "https://identity-staging.pingen.com",
-	}
+	c.bindResources()
 
-	if err := config.validate(); err != nil {
-		return nil, err
-	}
-
-	return config, nil
+	return c, nil
 }
 
-func (c *Config) SetAPIBaseURL(url string) {
-	c.apiProductionUrl = url
+func (c *Client) OrganisationID() string {
+	return c.organisationID
 }
 
-func (c *Config) GetAPIBaseURL() string {
-	if c.environment == "production" {
-		return c.apiProductionUrl
-	}
-	return c.apiStagingUrl
+func (c *Client) ForOrganisation(organisationID string) *Client {
+	scoped := *c
+	scoped.organisationID = organisationID
+	scoped.bindResources()
+
+	return &scoped
 }
 
-func (c *Config) GetAuthBaseURL() string {
-	if c.environment == "production" {
-		return c.authProductionUrl
-	}
-	return c.authStagingUrl
-}
-
-func (c *Config) GetClientID() string {
-	return c.clientID
-}
-
-func (c *Config) GetClientSecret() string {
-	return c.clientSecret
-}
-
-func (c *Config) GetRequestTimeout() time.Duration {
-	return c.requestTimeout
-}
-
-func (c *Config) GetUserAgent() string {
-	return "PINGEN.SDK.GO"
-}
-
-func (c *Config) validate() error {
-	if c.clientID == "" || c.clientSecret == "" {
-		return fmt.Errorf("missing required credentials (ClientID, ClientSecret)")
-	}
-	return nil
+func (c *Client) bindResources() {
+	c.Organisations = organisations.NewOrganisations(c.Requestor)
+	c.Users = users.NewUsers(c.Requestor)
+	c.UserAssociations = userassociations.NewUserAssociations(c.Requestor)
+	c.Letters = letters.NewLetters(c.organisationID, c.Requestor)
+	c.LetterEvents = letterevents.NewLetterEvents(c.organisationID, c.Requestor)
+	c.Batches = batches.NewBatches(c.organisationID, c.Requestor)
+	c.BatchEvents = batchevents.NewBatchEvents(c.organisationID, c.Requestor)
+	c.Webhooks = webhooks.NewWebhooks(c.organisationID, c.Requestor)
+	c.Emails = emails.NewEmails(c.organisationID, c.Requestor)
+	c.EmailEvents = emailevents.NewEmailEvents(c.organisationID, c.Requestor)
+	c.Ebills = ebills.NewEbills(c.organisationID, c.Requestor)
+	c.EbillEvents = ebillevents.NewEbillEvents(c.organisationID, c.Requestor)
 }

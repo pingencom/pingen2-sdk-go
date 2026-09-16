@@ -1,4 +1,4 @@
-.PHONY: help lint lint-fix test test-coverage build fmt deps clean check ci dev
+.PHONY: help lint lint-fix lint-integration test test-verbose test-coverage test-integration build fmt deps clean check ci dev
 
 # Colors
 BLUE=\033[0;34m
@@ -11,8 +11,10 @@ help:
 	@echo "$(BLUE)🚀 Available commands:$(NC)"
 	@echo "  make lint      - Run golangci-lint"
 	@echo "  make lint-fix  - Run golangci-lint with fixes"
-	@echo "  make test      - Run tests"
+	@echo "  make lint-integration - Type-check the integration suite (part of check/ci)"
+	@echo "  make test      - Run tests (unit only, integration suite is behind a build tag)"
 	@echo "  make test-cov  - Run tests with coverage"
+	@echo "  make test-integration - Run the integration suite against the real Pingen staging API (needs .env)"
 	@echo "  make check     - Run lint + tests"
 	@echo "  make fmt       - Format code"
 	@echo "  make build     - Build project"
@@ -32,6 +34,10 @@ lint-fix:
 	@echo "$(BLUE)🔍 Running staticcheck...$(NC)"
 	GOFLAGS="-buildvcs=false" go run honnef.co/go/tools/cmd/staticcheck@latest ./...
 
+lint-integration:
+	@echo "$(BLUE)🔍 Running staticcheck (integration build tag)...$(NC)"
+	GOFLAGS="-buildvcs=false" go run honnef.co/go/tools/cmd/staticcheck@latest -tags integration ./...
+
 # Tests
 test:
 	@echo "$(BLUE)🧪 Running tests...$(NC)"
@@ -40,6 +46,12 @@ test:
 test-verbose:
 	@echo "$(BLUE)🧪 Running tests (verbose)...$(NC)"
 	go test -v ./...
+
+# Hits the real Pingen staging API. Reads credentials from .env
+# (see .env.example); skips itself when they are absent.
+test-integration:
+	@echo "$(BLUE)🧪 Running integration tests (real staging API)...$(NC)"
+	go test -tags integration -v -timeout 30m ./integration/...
 
 test-cov:
 	@echo "$(BLUE)🧪 Running tests with coverage...$(NC)"
@@ -70,11 +82,11 @@ clean:
 	rm -f coverage.out coverage.html
 
 # Combined checks
-check: lint test
+check: lint lint-integration test
 	@echo "$(GREEN)✅ All checks passed!$(NC)"
 
 # CI pipeline
-ci: deps lint test-cov
+ci: deps lint lint-integration test-cov
 	@echo "$(GREEN)🚀 CI pipeline completed!$(NC)"
 
 # Development workflow

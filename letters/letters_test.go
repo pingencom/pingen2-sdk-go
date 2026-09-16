@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/pingencom/pingen2-sdk-go"
 	"github.com/pingencom/pingen2-sdk-go/api"
+	"github.com/pingencom/pingen2-sdk-go/config"
 	"github.com/pingencom/pingen2-sdk-go/letters"
 	"github.com/stretchr/testify/assert"
 )
@@ -19,7 +19,7 @@ const mockResponse = `{
 		"type": "letters",
 		"attributes": {
 			"status": "send",
-			"file_original_name": "lorem.pdf",
+			"file_original_name": "test.pdf",
 			"file_pages": 2,
 			"address": "Hans Meier\nExample street 4\n8000 Zürich\nSwitzerland",
 			"address_position": "left",
@@ -123,7 +123,7 @@ func setupUnauthorizedServer() *httptest.Server {
 }
 
 func setupLetter(apiBaseURL string) *letters.Letters {
-	config, _ := pingen2sdk.InitSDK("testSetClientId", "testSetClientSecret", "")
+	config, _ := config.InitSDK("testSetClientId", "testSetClientSecret", "")
 	config.SetAPIBaseURL(apiBaseURL)
 	apiRequestor := api.NewAPIRequestor("dummyToken", config)
 
@@ -148,7 +148,7 @@ func TestGetDetails(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx1", resp.Data.ID)
-	assert.Equal(t, "lorem.pdf", resp.Data.Attributes.FileOriginalName)
+	assert.Equal(t, "test.pdf", resp.Data.Attributes.FileOriginalName)
 	assert.Equal(t, "CH", resp.Data.Attributes.Country)
 	assert.Equal(t, "2021-11-19T09:42:48+0100", resp.Data.Attributes.SubmittedAt)
 }
@@ -176,7 +176,7 @@ func TestGetCollection(t *testing.T) {
 				"type": "letters",
 				"attributes": {
 					"status": "string",
-					"file_original_name": "lorem.pdf",
+					"file_original_name": "test.pdf",
 					"file_pages": 2,
 					"address": "Hans Meier\nExample street 4\n8000 Zürich\nSwitzerland",
 					"address_position": "left",
@@ -253,7 +253,7 @@ func TestGetCollection(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Len(t, resp.Data, 1)
 	assert.Equal(t, "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", resp.Data[0].ID)
-	assert.Equal(t, "lorem.pdf", resp.Data[0].Attributes.FileOriginalName)
+	assert.Equal(t, "test.pdf", resp.Data[0].Attributes.FileOriginalName)
 	assert.Equal(t, 2, resp.Data[0].Attributes.FilePages)
 	assert.Equal(t, 1, resp.Meta.CurrentPage)
 	assert.Equal(t, 10, resp.Meta.PerPage)
@@ -346,7 +346,7 @@ func TestUploadAndCreate(t *testing.T) {
 
 	letterClient := setupLetter(server.URL)
 
-	filePath := "testFile.pdf"
+	filePath := "../testdata/test.pdf"
 
 	resp, err := letterClient.UploadAndCreate(
 		filePath,
@@ -371,7 +371,7 @@ func TestUploadAndCreate_Error(t *testing.T) {
 	defer server.Close()
 
 	letterClient := setupLetter(server.URL)
-	filePath := "testFile.pdf"
+	filePath := "../testdata/test.pdf"
 
 	_, err := letterClient.UploadAndCreate(
 		filePath,
@@ -425,7 +425,7 @@ func TestUploadAndCreate_ErrorInPut(t *testing.T) {
 	defer server.Close()
 
 	letterClient := setupLetter(server.URL)
-	filePath := "testFile.pdf"
+	filePath := "../testdata/test.pdf"
 
 	_, err := letterClient.UploadAndCreate(
 		filePath,
@@ -460,7 +460,7 @@ func TestCreate(t *testing.T) {
 
 	letterClient := setupLetter(server.URL)
 
-	filePath := "testFile.pdf"
+	filePath := "../testdata/test.pdf"
 
 	resp, err := letterClient.Create(
 		filePath,
