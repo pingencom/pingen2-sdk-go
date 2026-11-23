@@ -6,7 +6,7 @@ The official [Pingen][pingen] Go client library for letter sending service.
 
 ## Requirements
 
-- Go 1.25 or later
+- Go 1.26 or later
 
 ## Installation
 
@@ -262,8 +262,8 @@ directive in `go.mod` fails outright instead of fetching a newer toolchain:
 Or as a one-off, without compose:
 
 ```sh
-  docker run --rm -v "$PWD":/app -w /app golang:1.26 make test
-  docker run --rm -v "$PWD":/app -w /app golang:1.26 make test-integration
+  docker run --rm -v "$PWD":/app -w /app golang:1.27 make test
+  docker run --rm -v "$PWD":/app -w /app golang:1.27 make test-integration
 ```
 
 Because the working tree is mounted, the container reads the same `.env` and
