@@ -51,11 +51,9 @@ func TestGetDetails(t *testing.T) {
 					"billing_balance": 11.23,
 					"missing_credits": 0,
 					"edition": "string",
-					"default_country": "CH",
 					"default_address_position": "left",
 					"data_retention_addresses": 18,
 					"data_retention_pdf": 12,
-					"limits_monthly_letters_count": 5000,
 					"color": "#0758FF",
 					"flags": [
 						"string"
@@ -105,7 +103,6 @@ func TestGetDetails(t *testing.T) {
 	assert.Equal(t, "organisations", response.Data.Type)
 	assert.Equal(t, "ACME GmbH", response.Data.Attributes.Name)
 	assert.Equal(t, 11.23, response.Data.Attributes.BillingBalance)
-	assert.Equal(t, "CH", response.Data.Attributes.DefaultCountry)
 	assert.Equal(t, "left", response.Data.Attributes.DefaultAddressPosition)
 }
 
@@ -143,7 +140,6 @@ func TestGetCollection(t *testing.T) {
 						"billing_mode": "prepaid",
 						"billing_currency": "CHF",
 						"billing_balance": 11.23,
-						"default_country": "CH",
 						"created_at": "2020-11-19T09:42:48+0100",
 						"updated_at": "2020-11-19T09:42:48+0100"
 					},
@@ -179,7 +175,6 @@ func TestGetCollection(t *testing.T) {
 	assert.Equal(t, 1, len(response.Data))
 	assert.Equal(t, "ACME GmbH", response.Data[0].Attributes.Name)
 	assert.Equal(t, 11.23, response.Data[0].Attributes.BillingBalance)
-	assert.Equal(t, "CH", response.Data[0].Attributes.DefaultCountry)
 	assert.Equal(t, "string", response.Links.Self)
 	assert.Equal(t, 1, response.Meta.CurrentPage)
 	assert.Equal(t, 1, response.Meta.Total)

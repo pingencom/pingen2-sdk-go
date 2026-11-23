@@ -809,7 +809,6 @@ func TestDeleteBatch(t *testing.T) {
                 "id": "test-batch-id",
                 "type": "batches",
                 "attributes": {
-                    "with_letters": true,
                     "with_deliverables": true
                 }
             }
@@ -835,7 +834,6 @@ func TestDeleteBatch_WithoutDeliverables(t *testing.T) {
 		payload := decodeRequestPayload(t, r)
 		assert.Equal(t, "test-batch-id", payload.Data.ID)
 		assert.Equal(t, "batches", payload.Data.Type)
-		assert.Equal(t, false, payload.Data.Attributes["with_letters"])
 		assert.Equal(t, false, payload.Data.Attributes["with_deliverables"])
 
 		w.WriteHeader(http.StatusNoContent)
@@ -1042,4 +1040,64 @@ func TestEnum_Constants(t *testing.T) {
 
 	assert.Equal(t, "color", string(batches.PrintSpectrumColor))
 	assert.Equal(t, "grayscale", string(batches.PrintSpectrumGrayscale))
+}
+
+func TestCreateBatch_SplitPositionRequired(t *testing.T) {
+	for _, splitType := range []batches.SplitType{batches.SplitTypeCustom, batches.SplitTypeQRInvoice} {
+		t.Run(string(splitType), func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				t.Errorf("unexpected request to %s", r.URL.Path)
+			}))
+			defer server.Close()
+
+			batchClient := setupBatch(server.URL)
+			empty := batches.SplitPosition("")
+
+			for _, position := range []*batches.SplitPosition{nil, &empty} {
+				_, err := batchClient.CreateBatch(
+					"https://example.com/file.pdf", "signature123", "Batch", batches.IconRocket,
+					batches.ChannelTypePost, "file.pdf", batches.AddressPositionLeft,
+					batches.GroupingTypeMerge, splitType, nil, nil, position, nil,
+				)
+
+				assert.NotNil(t, err)
+				assert.Equal(t, http.StatusUnprocessableEntity, err.StatusCode)
+				assert.Contains(t, err.Message, "grouping_options_split_position is required")
+			}
+
+			_, err := batchClient.UploadAndCreateBatch(
+				"/non/existent.pdf", "Batch", batches.IconRocket,
+				batches.ChannelTypePost, "file.pdf", batches.AddressPositionLeft,
+				batches.GroupingTypeMerge, splitType, nil, nil, nil, nil,
+			)
+
+			assert.NotNil(t, err)
+			assert.Equal(t, http.StatusUnprocessableEntity, err.StatusCode)
+		})
+	}
+}
+
+func TestCreateBatch_SplitPositionProvidedForCustom(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		payload := decodeRequestPayload(t, r)
+		assert.Equal(t, "custom", payload.Data.Attributes["grouping_options_split_type"])
+		assert.Equal(t, "last_page", payload.Data.Attributes["grouping_options_split_position"])
+
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{"data":{"id":"test-batch-id","type":"batches"}}`))
+	}))
+	defer server.Close()
+
+	batchClient := setupBatch(server.URL)
+	position := batches.SplitPositionLastPage
+	separator := "%%"
+
+	resp, err := batchClient.CreateBatch(
+		"https://example.com/file.pdf", "signature123", "Batch", batches.IconRocket,
+		batches.ChannelTypePost, "file.pdf", batches.AddressPositionLeft,
+		batches.GroupingTypeMerge, batches.SplitTypeCustom, nil, &separator, &position, nil,
+	)
+
+	assert.Nil(t, err)
+	assert.Equal(t, "test-batch-id", resp.Data.ID)
 }
