@@ -410,7 +410,7 @@ func TestNewAPIRequestorWithTokenSource_StreamError(t *testing.T) {
 func TestPerformDeleteRequestWithPayload_Success(t *testing.T) {
 	config, _ := config.InitSDK("testSetClientId", "testSetClientSecret", "")
 
-	payload := []byte(`{"data":{"id":"batchId","type":"batches","attributes":{"with_letters":true,"with_deliverables":true}}}`)
+	payload := []byte(`{"data":{"id":"batchId","type":"batches","attributes":{"with_deliverables":true}}}`)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodDelete, r.Method)

@@ -3,6 +3,7 @@ package batches
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"github.com/pingencom/pingen2-sdk-go/api"
 	"github.com/pingencom/pingen2-sdk-go/errors"
@@ -94,6 +95,25 @@ const (
 	SplitPositionFirstPage SplitPosition = "first_page"
 	SplitPositionLastPage  SplitPosition = "last_page"
 )
+
+// validateSplitPosition mirrors the API rule: grouping_options_split_position
+// is required when grouping_options_split_type is custom or qr_invoice.
+func validateSplitPosition(splitType SplitType, splitPosition *SplitPosition) *errors.PingenError {
+	if splitType != SplitTypeCustom && splitType != SplitTypeQRInvoice {
+		return nil
+	}
+
+	if splitPosition == nil || *splitPosition == "" {
+		return errors.NewPingenError(
+			fmt.Sprintf("grouping_options_split_position is required when grouping_options_split_type is %q", splitType),
+			"",
+			http.StatusUnprocessableEntity,
+			nil,
+		)
+	}
+
+	return nil
+}
 
 type Batches struct {
 	organisationID string
@@ -290,6 +310,10 @@ func (b *Batches) UploadAndCreateBatch(
 	groupingOptionsSplitSeparator *string, groupingOptionsSplitPosition *SplitPosition,
 	relationships map[string]interface{},
 ) (BatchResponse, *errors.PingenError) {
+	if err := validateSplitPosition(groupingOptionsSplitType, groupingOptionsSplitPosition); err != nil {
+		return BatchResponse{}, err
+	}
+
 	fileUpload := fileupload.NewFileUpload(b.apiRequestor)
 
 	fileResponse, err := fileUpload.RequestFileUpload()
@@ -326,6 +350,10 @@ func (b *Batches) CreateBatch(
 	groupingOptionsSplitSeparator *string, groupingOptionsSplitPosition *SplitPosition,
 	relationships map[string]interface{},
 ) (BatchResponse, *errors.PingenError) {
+	if err := validateSplitPosition(groupingOptionsSplitType, groupingOptionsSplitPosition); err != nil {
+		return BatchResponse{}, err
+	}
+
 	attributes := map[string]interface{}{
 		"file_url":                    fileURL,
 		"file_url_signature":          fileURLSignature,
@@ -434,8 +462,6 @@ func (b *Batches) DeleteBatch(batchID string, withDeliverables bool) (interface{
 			"id":   batchID,
 			"type": "batches",
 			"attributes": map[string]interface{}{
-				// with_letters is deprecated but still required, it mirrors with_deliverables.
-				"with_letters":      withDeliverables,
 				"with_deliverables": withDeliverables,
 			},
 		},

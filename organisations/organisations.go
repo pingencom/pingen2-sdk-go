@@ -16,23 +16,21 @@ type OrganisationResponse struct {
 		ID         string `json:"id"`
 		Type       string `json:"type"`
 		Attributes struct {
-			Name                      string   `json:"name"`
-			Status                    string   `json:"status"`
-			Plan                      string   `json:"plan"`
-			BillingMode               string   `json:"billing_mode"`
-			BillingCurrency           string   `json:"billing_currency"`
-			BillingBalance            float64  `json:"billing_balance"`
-			MissingCredits            int      `json:"missing_credits"`
-			Edition                   string   `json:"edition"`
-			DefaultCountry            string   `json:"default_country"`
-			DefaultAddressPosition    string   `json:"default_address_position"`
-			DataRetentionAddresses    int      `json:"data_retention_addresses"`
-			DataRetentionPDF          int      `json:"data_retention_pdf"`
-			LimitsMonthlyLettersCount int      `json:"limits_monthly_letters_count"`
-			Color                     string   `json:"color"`
-			Flags                     []string `json:"flags"`
-			CreatedAt                 string   `json:"created_at"`
-			UpdatedAt                 string   `json:"updated_at"`
+			Name                   string   `json:"name"`
+			Status                 string   `json:"status"`
+			Plan                   string   `json:"plan"`
+			BillingMode            string   `json:"billing_mode"`
+			BillingCurrency        string   `json:"billing_currency"`
+			BillingBalance         float64  `json:"billing_balance"`
+			MissingCredits         int      `json:"missing_credits"`
+			Edition                string   `json:"edition"`
+			DefaultAddressPosition string   `json:"default_address_position"`
+			DataRetentionAddresses int      `json:"data_retention_addresses"`
+			DataRetentionPDF       int      `json:"data_retention_pdf"`
+			Color                  string   `json:"color"`
+			Flags                  []string `json:"flags"`
+			CreatedAt              string   `json:"created_at"`
+			UpdatedAt              string   `json:"updated_at"`
 		} `json:"attributes"`
 		Relationships struct {
 			Associations struct {
@@ -65,23 +63,21 @@ type OrganisationCollectionResponse struct {
 		ID         string `json:"id"`
 		Type       string `json:"type"`
 		Attributes struct {
-			Name                      string   `json:"name"`
-			Status                    string   `json:"status"`
-			Plan                      string   `json:"plan"`
-			BillingMode               string   `json:"billing_mode"`
-			BillingCurrency           string   `json:"billing_currency"`
-			BillingBalance            float64  `json:"billing_balance"`
-			MissingCredits            int      `json:"missing_credits"`
-			Edition                   string   `json:"edition"`
-			DefaultCountry            string   `json:"default_country"`
-			DefaultAddressPosition    string   `json:"default_address_position"`
-			DataRetentionAddresses    int      `json:"data_retention_addresses"`
-			DataRetentionPDF          int      `json:"data_retention_pdf"`
-			LimitsMonthlyLettersCount int      `json:"limits_monthly_letters_count"`
-			Color                     string   `json:"color"`
-			Flags                     []string `json:"flags"`
-			CreatedAt                 string   `json:"created_at"`
-			UpdatedAt                 string   `json:"updated_at"`
+			Name                   string   `json:"name"`
+			Status                 string   `json:"status"`
+			Plan                   string   `json:"plan"`
+			BillingMode            string   `json:"billing_mode"`
+			BillingCurrency        string   `json:"billing_currency"`
+			BillingBalance         float64  `json:"billing_balance"`
+			MissingCredits         int      `json:"missing_credits"`
+			Edition                string   `json:"edition"`
+			DefaultAddressPosition string   `json:"default_address_position"`
+			DataRetentionAddresses int      `json:"data_retention_addresses"`
+			DataRetentionPDF       int      `json:"data_retention_pdf"`
+			Color                  string   `json:"color"`
+			Flags                  []string `json:"flags"`
+			CreatedAt              string   `json:"created_at"`
+			UpdatedAt              string   `json:"updated_at"`
 		} `json:"attributes"`
 		Relationships struct {
 			Associations struct {
